@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- 蜜蜂身体 -->
+  <ellipse cx="120" cy="120" rx="80" ry="70" fill="#FFC107" />
+  
+  <!-- 蜜蜂条纹 -->
+  <rect x="80" y="90" width="80" height="15" fill="black" opacity="0.2" />
+  <rect x="80" y="115" width="80" height="15" fill="black" opacity="0.2" />
+  <rect x="80" y="140" width="80" height="15" fill="black" opacity="0.2" />
+  
+  <!-- 蜜蜂翅膀 -->
+  <ellipse cx="75" cy="70" rx="35" ry="25" fill="#E1F5FE" opacity="0.8" transform="rotate(-15, 75, 70)" />
+  <ellipse cx="165" cy="70" rx="35" ry="25" fill="#E1F5FE" opacity="0.8" transform="rotate(15, 165, 70)" />
+  
+  <!-- 蜜蜂天线 -->
+  <line x1="110" y1="60" x2="100" y2="30" stroke="black" stroke-width="3" />
+  <line x1="130" y1="60" x2="140" y2="30" stroke="black" stroke-width="3" />
+  <circle cx="100" cy="30" r="6" fill="#FFC107" />
+  <circle cx="140" cy="30" r="6" fill="#FFC107" />
+  
+  <!-- 蜜蜂眼睛 -->
+  <circle cx="100" cy="90" r="15" fill="white" />
+  <circle cx="140" cy="90" r="15" fill="white" />
+  <circle cx="100" cy="90" r="8" fill="#2196F3" />
+  <circle cx="140" cy="90" r="8" fill="#2196F3" />
+  <circle cx="103" cy="87" r="3" fill="white" />
+  <circle cx="143" cy="87" r="3" fill="white" />
+  
+  <!-- 蜜蜂笑容 -->
+  <path d="M100 120 Q120 140 140 120" stroke="black" stroke-width="3" fill="none" />
+</svg>
