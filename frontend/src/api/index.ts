@@ -29,12 +29,43 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // token过期，清除token并跳转到登录页
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/login';
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      // 处理常见HTTP错误
+      if (status === 401) {
+        // token过期，清除token并跳转到登录页
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+      } 
+      
+      // 增强错误对象，添加格式化的错误消息
+      if (data) {
+        // 处理常见的后端错误格式
+        if (typeof data === 'object') {
+          // 收集所有字段的错误信息
+          const errorMessages = [];
+          
+          // 处理Django REST Framework常见的错误格式
+          for (const [field, messages] of Object.entries(data)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(`${field}: ${messages.join(', ')}`);
+            } else if (typeof messages === 'string') {
+              errorMessages.push(`${field}: ${messages}`);
+            }
+          }
+          
+          // 如果有格式化的错误信息，添加到错误对象中
+          if (errorMessages.length > 0) {
+            error.formattedMessage = errorMessages.join('\n');
+          }
+        } else if (typeof data === 'string') {
+          error.formattedMessage = data;
+        }
+      }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -54,7 +85,7 @@ export const templateApi = {
   getTemplates: (params?: any) => apiClient.get('/templates/', { params }),
   getTemplate: (id: number) => apiClient.get(`/templates/${id}/`),
   createTemplate: (data: any) => apiClient.post('/templates/', data),
-  updateTemplate: (id: number, data: any) => apiClient.put(`/templates/${id}/`, data),
+  updateTemplate: (id: number, data: any) => apiClient.patch(`/templates/${id}/`, data),
   deleteTemplate: (id: number) => apiClient.delete(`/templates/${id}/`),
 };
 
@@ -63,7 +94,7 @@ export const robotApi = {
   getRobots: (params?: any) => apiClient.get('/robots/', { params }),
   getRobot: (id: number) => apiClient.get(`/robots/${id}/`),
   createRobot: (data: any) => apiClient.post('/robots/', data),
-  updateRobot: (id: number, data: any) => apiClient.put(`/robots/${id}/`, data),
+  updateRobot: (id: number, data: any) => apiClient.patch(`/robots/${id}/`, data),
   deleteRobot: (id: number) => apiClient.delete(`/robots/${id}/`),
 };
 

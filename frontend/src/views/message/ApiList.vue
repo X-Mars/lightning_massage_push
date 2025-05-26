@@ -39,17 +39,32 @@
               >
                 <el-table-column prop="template_name" label="模板名称" min-width="180" />
                 <el-table-column prop="robot_name" label="机器人名称" width="150" />
-                <el-table-column label="接口地址 (点击复制)" min-width="380">
+                <el-table-column label="接口地址 (点击复制)" min-width="400">
                   <template #default="scope">
-                    <div class="api-url-container">
-                      <div 
-                        class="api-url-text api-url-clickable"
-                        @click="copyApiUrl(scope.row.template_id, scope.row.robot_id)"
-                        title="点击复制接口地址"
-                      >
-                        {{ getApiUrl(scope.row.template_id, scope.row.robot_id) }}
-                      </div>
-                    </div>
+                    <el-tabs type="border-card" class="api-tabs">
+                      <el-tab-pane label="ID模式">
+                        <div class="api-url-container">
+                          <div 
+                            class="api-url-text api-url-clickable"
+                            @click="copyApiUrl(scope.row.template_id, scope.row.robot_id)"
+                            title="点击复制接口地址"
+                          >
+                            {{ getApiUrl(scope.row.template_id, scope.row.robot_id) }}
+                          </div>
+                        </div>
+                      </el-tab-pane>
+                      <el-tab-pane label="名称模式" v-if="scope.row.robot_english_name">
+                        <div class="api-url-container">
+                          <div 
+                            class="api-url-text api-url-clickable"
+                            @click="copyApiUrlByName(scope.row.template_id, scope.row.robot_english_name)"
+                            title="点击复制接口地址"
+                          >
+                            {{ getApiUrl(scope.row.template_id, 0, scope.row.robot_english_name) }}
+                          </div>
+                        </div>
+                      </el-tab-pane>
+                    </el-tabs>
                   </template>
                 </el-table-column>
                 <el-table-column label="操作" width="180">
@@ -63,15 +78,23 @@
                       <el-icon><InfoFilled /></el-icon>
                       接口说明
                     </el-button>
-                    <el-button 
-                      type="success" 
-                      size="small" 
-                      @click="testApi(scope.row.template_id, scope.row.robot_id)" 
-                      plain
-                    >
-                      <el-icon><Connection /></el-icon>
-                      测试
-                    </el-button>
+                    <el-dropdown trigger="click" @command="(command) => handleTestCommand(command, scope.row)">
+                      <el-button 
+                        type="success" 
+                        size="small" 
+                        plain
+                      >
+                        <el-icon><Connection /></el-icon>
+                        测试
+                        <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item command="id">ID模式测试</el-dropdown-item>
+                          <el-dropdown-item command="name" v-if="scope.row.robot_english_name">名称模式测试</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
                   </template>
                 </el-table-column>
               </el-table>
@@ -95,16 +118,32 @@
           <h4>基本信息</h4>
           <el-descriptions :column="1" border>
             <el-descriptions-item label="模板名称">{{ currentTemplateInfo.name }}</el-descriptions-item>
-            <el-descriptions-item label="模板描述">{{ currentTemplateInfo.description }}</el-descriptions-item>
             <el-descriptions-item label="适用机器人">{{ currentTemplateInfo.robot_type_name }}</el-descriptions-item>
           </el-descriptions>
         </div>
         
         <div class="docs-section">
           <h4>接口地址 (点击复制)</h4>
-          <div class="api-url-box">
-            <div class="api-url-clickable" @click="copyCurrentApiUrl" title="点击复制接口地址">POST {{ currentApiUrl }}</div>
-          </div>
+          <el-tabs type="border-card">
+            <el-tab-pane label="ID模式">
+              <div class="api-url-box">
+                <div class="api-url-clickable" @click="copyCurrentApiUrl" title="点击复制接口地址">POST {{ currentApiUrl }}</div>
+              </div>
+            </el-tab-pane>
+            <el-tab-pane label="名称模式">
+              <div class="api-url-box">
+                <div class="api-url-clickable" @click="copyCurrentApiUrlByName" title="点击复制接口地址">
+                  POST {{ currentApiUrlByName }}
+                </div>
+              </div>
+              <div class="api-note">
+                <p>
+                  <el-icon><InfoFilled /></el-icon> 
+                  <strong>说明：</strong>名称模式使用机器人的英文名称作为参数，适用于不方便记忆机器人ID的场景。
+                </p>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
         </div>
         
         <div class="docs-section">
@@ -156,10 +195,27 @@
     >
       <div class="test-api-container" v-if="currentTemplateInfo">
         <div class="test-section">
-          <h4>接口地址 (点击复制)</h4>
-          <div class="api-url-box">
-            <div class="api-url-clickable" @click="copyCurrentApiUrl" title="点击复制接口地址">POST {{ currentApiUrl }}</div>
-          </div>
+          <h4>接口信息</h4>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="接口类型">
+              <el-tag :type="currentTestMode === 'name' ? 'success' : 'primary'">
+                {{ currentTestMode === 'name' ? '名称模式' : 'ID模式' }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="接口地址">
+              <div class="api-url-box">
+                <div class="api-url-clickable" @click="copyCurrentApiUrl" title="点击复制接口地址">
+                  POST {{ currentApiUrl }}
+                </div>
+              </div>
+            </el-descriptions-item>
+            <el-descriptions-item label="说明" v-if="currentTestMode === 'name'">
+              使用机器人英文名称作为参数，无需记忆机器人ID
+            </el-descriptions-item>
+            <el-descriptions-item label="说明" v-else>
+              使用机器人ID作为路径参数，传统调用方式
+            </el-descriptions-item>
+          </el-descriptions>
         </div>
         
         <div class="test-section">
@@ -204,7 +260,8 @@ import useClipboard from 'vue-clipboard3';
 import { 
   Refresh, 
   InfoFilled, 
-  Connection 
+  Connection,
+  ArrowDown
 } from '@element-plus/icons-vue';
 
 // 存储
@@ -242,12 +299,14 @@ const currentTemplateId = ref<number | null>(null);
 const currentRobotId = ref<number | null>(null);
 const currentTemplateInfo = ref<any>(null);
 const currentApiUrl = ref('');
+const currentApiUrlByName = ref('');
 
 // 测试接口对话框
 const testDialogVisible = ref(false);
 const testRequestData = ref('');
 const testResult = ref<any>(null);
 const testLoading = ref(false);
+const currentTestMode = ref<'id' | 'name'>('id'); // 'id' 或 'name'
 
 // 获取机器人类型标签样式
 const getRobotTypeTagType = (type: RobotType) => {
@@ -275,13 +334,21 @@ const getTemplatesForRobot = (robot: Robot, templates: Template[]) => {
     template_id: template.id,
     template_name: template.name,
     robot_id: robot.id,
-    robot_name: robot.name
+    robot_name: robot.name,
+    robot_english_name: robot.english_name || ''
   }));
 };
 
 // 获取API地址
-const getApiUrl = (templateId: number, robotId: number) => {
+const getApiUrl = (templateId: number, robotId: number, robotEnglishName?: string) => {
   const baseUrl = window.location.origin;
+  
+  // 如果提供了英文名称，则使用英文名称形式的URL
+  if (robotEnglishName) {
+    return `${baseUrl}/api/public/push/${templateId}/?robot_english_name=${robotEnglishName}`;
+  }
+  
+  // 否则使用ID形式的URL
   return `${baseUrl}/api/public/push/${templateId}/${robotId}/`;
 };
 
@@ -289,6 +356,18 @@ const getApiUrl = (templateId: number, robotId: number) => {
 const copyApiUrl = async (templateId: number, robotId: number) => {
   try {
     const url = getApiUrl(templateId, robotId);
+    await toClipboard(url);
+    ElMessage.success('接口地址已复制到剪贴板');
+  } catch (e) {
+    console.error('复制失败', e);
+    ElMessage.error('复制失败，请手动复制');
+  }
+};
+
+// 复制通过名称访问的API地址
+const copyApiUrlByName = async (templateId: number, robotEnglishName: string) => {
+  try {
+    const url = getApiUrl(templateId, 0, robotEnglishName);
     await toClipboard(url);
     ElMessage.success('接口地址已复制到剪贴板');
   } catch (e) {
@@ -313,7 +392,10 @@ const fetchTemplateInfo = async (templateId: number) => {
 // 显示API文档
 const showApiDocs = async (templateId: number) => {
   currentTemplateId.value = templateId;
+  
+  // 设置两种API URL格式
   currentApiUrl.value = getApiUrl(templateId, 0).replace('/0/', '/[robot_id]/');
+  currentApiUrlByName.value = getApiUrl(templateId, 0, '[robot_english_name]');
   
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);
@@ -327,6 +409,17 @@ const showApiDocs = async (templateId: number) => {
 const copyCurrentApiUrl = async () => {
   try {
     await toClipboard(currentApiUrl.value);
+    ElMessage.success('接口地址已复制到剪贴板');
+  } catch (e) {
+    console.error('复制失败', e);
+    ElMessage.error('复制失败，请手动复制');
+  }
+};
+
+// 复制当前通过名称访问的API地址
+const copyCurrentApiUrlByName = async () => {
+  try {
+    await toClipboard(currentApiUrlByName.value);
     ElMessage.success('接口地址已复制到剪贴板');
   } catch (e) {
     console.error('复制失败', e);
@@ -348,11 +441,27 @@ const copyExampleJson = async () => {
   }
 };
 
+// 处理测试命令
+const handleTestCommand = (command: string, row: any) => {
+  if (command === 'id') {
+    testApi(row.template_id, row.robot_id, undefined, 'id');
+  } else if (command === 'name' && row.robot_english_name) {
+    testApi(row.template_id, row.robot_id, row.robot_english_name, 'name');
+  }
+};
+
 // 测试API
-const testApi = async (templateId: number, robotId: number) => {
+const testApi = async (templateId: number, robotId: number, robotEnglishName?: string, mode: 'id' | 'name' = 'id') => {
   currentTemplateId.value = templateId;
   currentRobotId.value = robotId;
-  currentApiUrl.value = getApiUrl(templateId, robotId);
+  currentTestMode.value = mode;
+  
+  // 根据模式设置API URL
+  if (mode === 'name' && robotEnglishName) {
+    currentApiUrl.value = getApiUrl(templateId, 0, robotEnglishName);
+  } else {
+    currentApiUrl.value = getApiUrl(templateId, robotId);
+  }
   
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);

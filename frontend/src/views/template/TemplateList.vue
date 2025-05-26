@@ -49,7 +49,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="updated_at" label="更新时间" width="180" />
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
@@ -149,15 +148,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
-        <el-form-item label="模板描述" prop="description">
-          <el-input 
-            v-model="form.description" 
-            type="textarea" 
-            :rows="2" 
-            placeholder="请输入模板描述"
-          />
-        </el-form-item>
         
         <el-form-item label="模板内容" prop="content">
           <el-row :gutter="20">

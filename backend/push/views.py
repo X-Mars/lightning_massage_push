@@ -32,7 +32,7 @@ class RobotViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Robot.objects.filter(created_by=self.request.user)
+        return Robot.objects.filter(created_by=self.request.user).order_by('-created_at')
 
 
 class MessageLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -101,11 +101,12 @@ class PublicMessagePushView(APIView):
             # 获取POST中的数据
             content_data = request.data
             
-            # 推送消息
+            # 推送消息，使用模板创建者作为操作用户
             success, error_msg = MessagePushService.push_message(
                 template=template,
                 robot=robot,
-                data=content_data
+                data=content_data,
+                user=template.created_by  # 使用模板创建者作为操作用户
             )
             
             if success:
@@ -205,7 +206,7 @@ class TemplateInfoView(APIView):
             # 查找匹配的机器人列表
             matching_robots = Robot.objects.filter(
                 robot_type=template.robot_type
-            ).values('id', 'name')
+            ).values('id', 'name', 'english_name')
             
             # 构建机器人类型名称映射
             robot_type_names = {
@@ -217,7 +218,6 @@ class TemplateInfoView(APIView):
             # 构建响应数据
             response_data = {
                 'name': template.name,
-                'description': template.description,
                 'robot_type': template.robot_type,
                 'robot_type_name': robot_type_names.get(template.robot_type, "未知"),
                 'variables': list(variables),
@@ -232,3 +232,91 @@ class TemplateInfoView(APIView):
                 {"error": f"获取模板信息失败: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class PublicMessagePushByNameView(APIView):
+    """通过机器人英文名称推送消息的API，无需认证
+    
+    POST /api/public/push/{template_id}/?robot_english_name=name
+    
+    请求体示例:
+    {
+        "title": "消息标题",
+        "content": "消息内容",
+        ...根据模板中定义的变量传递
+    }
+    """
+    permission_classes = []  # 不需要认证
+    
+    def post(self, request, template_id):
+        # 获取robot_english_name参数
+        robot_english_name = request.query_params.get('robot_english_name')
+        
+        # 获取模板
+        template = get_object_or_404(Template, pk=template_id)
+        robot = None
+
+        if robot_english_name:
+            robots_by_name = Robot.objects.filter(english_name=robot_english_name)
+            if robots_by_name.count() > 1:
+                return Response(
+                    {"error": f"存在多个英文名称为'{robot_english_name}'的机器人，请确保英文名称唯一"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif robots_by_name.count() == 1:
+                robot = robots_by_name.first()
+            # 如果 robots_by_name.count() == 0, robot 保持为 None, 会进入下面的 if not robot 逻辑
+
+        if not robot: # 如果robot_english_name未提供，或提供了但未找到唯一机器人
+            # 尝试查找默认机器人
+            # 1. 优先查找模板创建者的默认机器人
+            default_robots_by_creator = Robot.objects.filter(is_default=True, created_by=template.created_by)
+            if default_robots_by_creator.exists():
+                robot = default_robots_by_creator.first() # 如果找到多个，取第一个
+            else:
+                # 2. 如果模板创建者没有默认机器人，则查找全局默认机器人
+                global_default_robots = Robot.objects.filter(is_default=True)
+                if global_default_robots.exists():
+                    robot = global_default_robots.first() # 如果找到多个，取第一个
+                else:
+                    # 未找到任何默认机器人
+                    error_message = ""
+                    if robot_english_name: #提供了robot_english_name但未找到，且无默认
+                        error_message = f"机器人 '{robot_english_name}' 未找到，且未配置默认机器人。"
+                    else: # 未提供robot_english_name，且无默认
+                        error_message = "未提供机器人英文名称，且未找到默认机器人。请指定机器人或设置一个默认机器人。"
+                    return Response(
+                        {"error": error_message},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+        
+        # 此时，如果robot仍然是None，说明逻辑有误，或者确实没有任何可用的机器人
+        if not robot:
+            # 这是一个备用检查，理论上不应该到达这里，因为前面的逻辑会处理所有情况
+            return Response({"error": "无法确定用于发送消息的机器人。"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 确保模板和机器人类型匹配
+        if template.robot_type != robot.robot_type:
+            return Response(
+                {"error": f"模板类型({template.get_robot_type_display()})与机器人类型({robot.get_robot_type_display()})不匹配"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # 获取POST中的数据
+            content_data = request.data
+            
+            # 推送消息，使用模板创建者作为操作用户
+            success, error_msg = MessagePushService.push_message(
+                template=template,
+                robot=robot,
+                data=content_data,
+                user=template.created_by  # 使用模板创建者作为操作用户
+            )
+            
+            if success:
+                return Response({"message": "消息推送成功"}, status=status.HTTP_200_OK)
+            return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"error": f"消息推送失败: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)

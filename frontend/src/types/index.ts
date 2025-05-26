@@ -40,8 +40,10 @@ export interface Template {
 export interface Robot {
   id: number;
   name: string;
+  english_name?: string;
   webhook_url: string;
   robot_type: RobotType;
+  is_default: boolean;
   description: string;
   created_by: User;
   created_at: string;

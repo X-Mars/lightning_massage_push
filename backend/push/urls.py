@@ -12,6 +12,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('push/', views.MessagePushView.as_view(), name='message-push'),
     path('public/push/<int:template_id>/<int:robot_id>/', views.PublicMessagePushView.as_view(), name='public-message-push'),
+    path('public/push/<int:template_id>/', views.PublicMessagePushByNameView.as_view(), name='public-message-push-by-name'),
     path('templates/<int:template_id>/send/', views.TemplateDirectPushView.as_view(), name='template-direct-push'),
     path('templates/<int:template_id>/info/', views.TemplateInfoView.as_view(), name='template-info'),
     

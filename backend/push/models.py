@@ -13,7 +13,6 @@ class RobotType(models.TextChoices):
 class Template(models.Model):
     """消息模板"""
     name = models.CharField(max_length=100, verbose_name="模板名称")
-    description = models.TextField(blank=True, null=True, verbose_name="模板描述")
     content = models.TextField(verbose_name="模板内容")
     robot_type = models.CharField(
         max_length=20, 
@@ -36,13 +35,14 @@ class Template(models.Model):
 class Robot(models.Model):
     """机器人配置"""
     name = models.CharField(max_length=100, verbose_name="机器人名称")
+    english_name = models.CharField(max_length=100, verbose_name="英文名称", blank=True, null=True, unique=True)
     webhook_url = models.URLField(max_length=500, verbose_name="Webhook地址")
     robot_type = models.CharField(
         max_length=20, 
         choices=RobotType.choices, 
         verbose_name="机器人类型"
     )
-    description = models.TextField(blank=True, null=True, verbose_name="描述")
+    is_default = models.BooleanField(default=False, verbose_name="是否为默认机器人")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='robots', verbose_name="创建者")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
