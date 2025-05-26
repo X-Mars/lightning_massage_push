@@ -67,7 +67,7 @@ import type { FormInstance, FormRules } from 'element-plus';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { User, Lock, Message } from '@element-plus/icons-vue';
+import { User, Lock } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

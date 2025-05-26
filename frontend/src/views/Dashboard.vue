@@ -84,7 +84,7 @@
 import { ref, reactive, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import * as echarts from 'echarts';
-import { Document, ChatDotRound, SetUp } from '@element-plus/icons-vue';
+// 按需导入图标，移除未使用的
 import { ElMessageBox, ElMessage } from 'element-plus';
 import { dashboardApi } from '../api';
 import type { MessageLog } from '../types';

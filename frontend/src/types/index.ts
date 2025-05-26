@@ -8,11 +8,14 @@ export interface User {
 }
 
 // 机器人类型枚举
-export enum RobotType {
-  WECHAT = 'wechat',
-  FEISHU = 'feishu',
-  DINGTALK = 'dingtalk'
-}
+export const RobotType = {
+  WECHAT: 'wechat',
+  FEISHU: 'feishu',
+  DINGTALK: 'dingtalk'
+} as const;
+
+// 类型定义
+export type RobotType = typeof RobotType[keyof typeof RobotType];
 
 // 机器人类型名称映射
 export const RobotTypeNames = {

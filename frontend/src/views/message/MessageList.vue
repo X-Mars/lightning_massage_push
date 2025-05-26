@@ -118,7 +118,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useMessageStore } from '../../stores/message';
-import { MessageLog } from '../../types';
+import type { MessageLog } from '../../types';
 import { ElMessage } from 'element-plus';
 import { logApi } from '../../api';
 

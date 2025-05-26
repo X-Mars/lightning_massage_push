@@ -45,7 +45,7 @@
         <el-table-column prop="robot_type" label="机器人类型" width="120">
           <template #default="scope">
             <el-tag :type="getRobotTypeTagType(scope.row.robot_type)">
-              {{ RobotTypeNames[scope.row.robot_type] }}
+              {{ getRobotTypeName(scope.row.robot_type) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -307,17 +307,22 @@ const rules = reactive<FormRules>({
 });
 
 // 获取机器人类型标签样式
-const getRobotTypeTagType = (type: RobotType) => {
+const getRobotTypeTagType = (type: string) => {
   switch (type) {
-    case RobotType.WECHAT:
+    case 'wechat':
       return 'success';
-    case RobotType.FEISHU:
+    case 'feishu':
       return 'primary';
-    case RobotType.DINGTALK:
+    case 'dingtalk':
       return 'warning';
     default:
       return 'info';
   }
+};
+
+// 获取机器人类型名称
+const getRobotTypeName = (type: string) => {
+  return RobotTypeNames[type as keyof typeof RobotTypeNames] || '未知类型';
 };
 
 // 搜索处理
