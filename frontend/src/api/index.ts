@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { AxiosRequestConfig } from 'axios';
 
 // 创建axios实例
 const apiClient = axios.create({
@@ -52,7 +51,7 @@ export const refreshToken = (refresh: string) => {
 
 // 模板相关API
 export const templateApi = {
-  getTemplates: () => apiClient.get('/templates/'),
+  getTemplates: (params?: any) => apiClient.get('/templates/', { params }),
   getTemplate: (id: number) => apiClient.get(`/templates/${id}/`),
   createTemplate: (data: any) => apiClient.post('/templates/', data),
   updateTemplate: (id: number, data: any) => apiClient.put(`/templates/${id}/`, data),
@@ -61,7 +60,7 @@ export const templateApi = {
 
 // 机器人相关API
 export const robotApi = {
-  getRobots: () => apiClient.get('/robots/'),
+  getRobots: (params?: any) => apiClient.get('/robots/', { params }),
   getRobot: (id: number) => apiClient.get(`/robots/${id}/`),
   createRobot: (data: any) => apiClient.post('/robots/', data),
   updateRobot: (id: number, data: any) => apiClient.put(`/robots/${id}/`, data),

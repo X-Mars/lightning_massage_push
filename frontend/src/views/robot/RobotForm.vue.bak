@@ -1,0 +1,16 @@
+// 此文件为备份，原内容已经集成到 RobotList.vue
+// 保留此文件是为了保存原始代码以便将来参考
+
+<template>
+  <div class="robot-form-container">
+    <!-- 内容已移至 RobotList.vue -->
+  </div>
+</template>
+
+<script setup lang="ts">
+// 内容已移至 RobotList.vue
+</script>
+
+<style scoped>
+/* 样式已移至 RobotList.vue */
+</style>

@@ -17,14 +17,29 @@ export const useTemplateStore = defineStore('template', {
   }),
   
   actions: {
-    async fetchTemplates() {
+    async fetchTemplates(params = {}) {
       this.loading = true;
       try {
-        const response = await templateApi.getTemplates();
-        this.templates = response.data;
+        const response = await templateApi.getTemplates(params);
+        // 处理分页数据
+        if (response.data.results) {
+          this.templates = response.data.results;
+          return {
+            total: response.data.count,
+            results: response.data.results
+          };
+        } else {
+          // 如果没有分页，直接使用数据
+          this.templates = response.data;
+          return {
+            total: response.data.length,
+            results: response.data
+          };
+        }
       } catch (error) {
         console.error('获取模板列表失败:', error);
         ElMessage.error('获取模板列表失败');
+        return { total: 0, results: [] };
       } finally {
         this.loading = false;
       }

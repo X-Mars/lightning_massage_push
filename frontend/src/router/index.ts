@@ -39,6 +39,16 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
+        path: 'api',
+        name: 'ApiList',
+        component: () => import('../views/message/ApiList.vue'),
+        meta: {
+          title: '消息接口',
+          icon: 'Connection',
+          showInMenu: true
+        }
+      },
+      {
         path: 'templates',
         name: 'Templates',
         component: () => import('../views/template/TemplateList.vue'),
@@ -46,25 +56,6 @@ const routes: Array<RouteRecordRaw> = [
           title: '消息模板',
           icon: 'Document',
           showInMenu: true
-        }
-      },
-      {
-        path: 'templates/create',
-        name: 'CreateTemplate',
-        component: () => import('../views/template/TemplateForm.vue'),
-        meta: {
-          title: '创建模板',
-          showInMenu: false
-        }
-      },
-      {
-        path: 'templates/:id',
-        name: 'EditTemplate',
-        component: () => import('../views/template/TemplateForm.vue'),
-        props: true,
-        meta: {
-          title: '编辑模板',
-          showInMenu: false
         }
       },
       {
@@ -78,41 +69,12 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
-        path: 'robots/create',
-        name: 'CreateRobot',
-        component: () => import('../views/robot/RobotForm.vue'),
-        meta: {
-          title: '创建机器人',
-          showInMenu: false
-        }
-      },
-      {
-        path: 'robots/:id',
-        name: 'EditRobot',
-        component: () => import('../views/robot/RobotForm.vue'),
-        props: true,
-        meta: {
-          title: '编辑机器人',
-          showInMenu: false
-        }
-      },
-      {
         path: 'messages',
         name: 'Messages',
         component: () => import('../views/message/MessageList.vue'),
         meta: {
           title: '消息日志',
           icon: 'ChatDotRound',
-          showInMenu: true
-        }
-      },
-      {
-        path: 'api',
-        name: 'ApiList',
-        component: () => import('../views/message/ApiList.vue'),
-        meta: {
-          title: '消息接口',
-          icon: 'Connection',
           showInMenu: true
         }
       },
