@@ -126,4 +126,28 @@ export const dashboardApi = {
   getRecentLogs: () => apiClient.get('/dashboard/recent-logs/'),
 };
 
+// 分发相关API
+export const distributionApi = {
+  // 分发规则相关
+  getRules: (params?: any) => apiClient.get('/distribution/rules/', { params }),
+  getRule: (id: number) => apiClient.get(`/distribution/rules/${id}/`),
+  createRule: (data: any) => apiClient.post('/distribution/rules/', data),
+  updateRule: (id: number, data: any) => apiClient.patch(`/distribution/rules/${id}/`, data),
+  deleteRule: (id: number) => apiClient.delete(`/distribution/rules/${id}/`),
+  testRule: (data: any) => apiClient.post('/distribution/rules/test/', data),
+  
+  // 实例映射相关
+  getInstances: (params?: any) => apiClient.get('/distribution/instances/', { params }),
+  getInstance: (id: number) => apiClient.get(`/distribution/instances/${id}/`),
+  updateInstanceMapping: (id: number, data: any) => apiClient.patch(`/distribution/instances/${id}/`, data),
+  batchConfigureMapping: (data: any) => apiClient.post('/distribution/instances/batch-configure/', data),
+  batchClearMapping: (data: any) => apiClient.post('/distribution/instances/batch-clear/', data),
+  refreshInstances: () => apiClient.post('/distribution/refresh-instances/'),
+  
+  // 告警记录相关
+  getInstanceAlerts: (instanceId: number, params?: any) => 
+    apiClient.get(`/distribution/instances/${instanceId}/alerts/`, { params }),
+  getAlerts: (params?: any) => apiClient.get('/distribution/alerts/', { params }),
+};
+
 export default apiClient;

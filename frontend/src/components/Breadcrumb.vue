@@ -11,7 +11,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import type { RouteRecordNormalized } from 'vue-router';
 
 interface BreadcrumbItem {
   path: string;
@@ -19,46 +20,55 @@ interface BreadcrumbItem {
 }
 
 const route = useRoute();
+const router = useRouter();
 
-// 根据路由定义面包屑
+// 根据当前路由动态生成面包屑
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
-  const path = route.path;
-  const result: BreadcrumbItem[] = [];
+  const matchedRoutes = route.matched;
+  const breadcrumbItems: BreadcrumbItem[] = [];
   
-  if (path === '/') {
-    return [];
-  }
-  
-  if (path.startsWith('/templates')) {
-    result.push({ path: '/templates', title: '消息模板' });
+  // 遍历匹配的路由，构建面包屑路径
+  matchedRoutes.forEach((matchedRoute: RouteRecordNormalized, index: number) => {
+    // 跳过根路由和没有title的路由
+    const isRootLayout = matchedRoute.path === '/' && matchedRoute.children?.length;
+    const hasTitle = matchedRoute.meta?.title;
     
-    if (path.includes('/create')) {
-      result.push({ path: '', title: '创建模板' });
-    } else if (path.match(/\/templates\/\d+/)) {
-      result.push({ path: '', title: '编辑模板' });
+    if (!isRootLayout && hasTitle) {
+      // 构建当前层级的完整路径
+      const fullPath = buildFullPath(matchedRoutes, index);
+      
+      breadcrumbItems.push({
+        path: fullPath,
+        title: matchedRoute.meta.title as string
+      });
     }
-  }
+  });
   
-  if (path.startsWith('/robots')) {
-    result.push({ path: '/robots', title: '机器人列表' });
-    
-    if (path.includes('/create')) {
-      result.push({ path: '', title: '创建机器人' });
-    } else if (path.match(/\/robots\/\d+/)) {
-      result.push({ path: '', title: '编辑机器人' });
-    }
-  }
-  
-  if (path === '/messages') {
-    result.push({ path: '/messages', title: '消息日志' });
-  }
-  
-  if (path === '/push') {
-    result.push({ path: '/push', title: '发送消息' });
-  }
-  
-  return result;
+  return breadcrumbItems;
 });
+
+// 构建完整路径
+const buildFullPath = (routes: RouteRecordNormalized[], upToIndex: number): string => {
+  let path = '';
+  
+  for (let i = 0; i <= upToIndex; i++) {
+    const routeRecord = routes[i];
+    
+    // 跳过根路由
+    if (routeRecord.path === '/') {
+      continue;
+    }
+    
+    // 处理相对路径和绝对路径
+    if (routeRecord.path.startsWith('/')) {
+      path = routeRecord.path;
+    } else {
+      path = path.endsWith('/') ? path + routeRecord.path : path + '/' + routeRecord.path;
+    }
+  }
+  
+  return path || '/';
+};
 </script>
 
 <style scoped>

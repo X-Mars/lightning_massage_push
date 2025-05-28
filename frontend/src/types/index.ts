@@ -80,3 +80,48 @@ export interface PushMessageParams {
   robot_id: number;
   content: Record<string, any>;
 }
+
+// 分发规则类型
+export interface DistributionRule {
+  id?: number;
+  name: string;
+  type: 'json' | 'string';
+  description: string;
+  extract_path?: string;        // JSON模式的提取路径
+  extract_pattern?: string;     // 字符串模式的提取模式
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 实例映射类型
+export interface InstanceMapping {
+  id: number;
+  instance_name: string;
+  robot_id?: number;
+  robot_name?: string;
+  source_rule?: string;
+  alert_count: number;
+  last_alert_time?: string;
+  created_at: string;
+}
+
+// 告警记录类型
+export interface AlertRecord {
+  id: number;
+  instance_mapping: number;
+  rule_name: string;
+  alert_content: string;
+  alert_time: string;
+  processed: boolean;
+}
+
+// 分发配置类型
+export interface DistributionConfig {
+  id?: number;
+  rule: number;
+  robot: number;
+  conditions?: Record<string, any>;
+  priority: number;
+  is_active: boolean;
+}

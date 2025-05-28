@@ -20,12 +20,35 @@
           :collapse="isCollapse"
           router
         >
-          <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-            <el-icon>
-              <component :is="item.icon" />
-            </el-icon>
-            <span>{{ item.title }}</span>
-          </el-menu-item>
+          <template v-for="item in menuItems" :key="item.path">
+            <!-- 没有子菜单的普通菜单项 -->
+            <el-menu-item v-if="!item.children || item.children.length === 0" :index="item.path">
+              <el-icon>
+                <component :is="item.icon" />
+              </el-icon>
+              <span>{{ item.title }}</span>
+            </el-menu-item>
+            
+            <!-- 有子菜单的菜单项 -->
+            <el-sub-menu v-else :index="item.path">
+              <template #title>
+                <el-icon>
+                  <component :is="item.icon" />
+                </el-icon>
+                <span>{{ item.title }}</span>
+              </template>
+              <el-menu-item 
+                v-for="child in item.children" 
+                :key="child.path" 
+                :index="child.path"
+              >
+                <el-icon>
+                  <component :is="child.icon" />
+                </el-icon>
+                <span>{{ child.title }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </template>
         </el-menu>
       </el-aside>
       

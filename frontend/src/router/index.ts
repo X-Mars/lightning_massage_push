@@ -39,7 +39,7 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
-        path: 'api',
+        path: 'interface',
         name: 'ApiList',
         component: () => import('../views/message/ApiList.vue'),
         meta: {
@@ -87,6 +87,74 @@ const routes: Array<RouteRecordRaw> = [
           icon: 'Promotion',
           showInMenu: true
         }
+      },
+      {
+        path: 'prometheus',
+        name: 'Prometheus',
+        redirect: '/prometheus/alerts',
+        meta: {
+          title: 'Prometheus',
+          icon: 'Monitor',
+          showInMenu: true
+        },
+        children: [
+          {
+            path: 'alerts',
+            name: 'PrometheusAlerts',
+            component: () => import('../views/prometheus/AlertList.vue'),
+            meta: {
+              title: '告警记录',
+              icon: 'Warning',
+              showInMenu: true,
+              parent: 'Prometheus'
+            }
+          },
+          {
+            path: 'namespaces',
+            name: 'PrometheusNamespaces',
+            component: () => import('../views/prometheus/NamespaceList.vue'),
+            meta: {
+              title: '命名空间',
+              icon: 'FolderOpened',
+              showInMenu: true,
+              parent: 'Prometheus'
+            }
+          }
+        ]
+      },
+      {
+        path: 'distribution',
+        name: 'Distribution',
+        redirect: '/distribution/rules',
+        meta: {
+          title: '高级分发',
+          icon: 'Operation',
+          showInMenu: true
+        },
+        children: [
+          {
+            path: 'rules',
+            name: 'DistributionRules',
+            component: () => import('../views/distribution/RulesList.vue'),
+            meta: {
+              title: '分发规则',
+              icon: 'EditPen',
+              showInMenu: true,
+              parent: 'Distribution'
+            }
+          },
+          {
+            path: 'mapping',
+            name: 'DistributionMapping',
+            component: () => import('../views/distribution/MappingConfig.vue'),
+            meta: {
+              title: '分发通道',
+              icon: 'Setting',
+              showInMenu: true,
+              parent: 'Distribution'
+            }
+          }
+        ]
       }
     ]
   },

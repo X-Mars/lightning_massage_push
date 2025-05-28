@@ -1,5 +1,6 @@
 import json
 import re
+import logging
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
@@ -7,12 +8,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import HttpResponse
 
-from .models import Template, Robot, MessageLog, RobotType
+from .models import Template, Robot, MessageLog, RobotType, DistributionRule, InstanceMapping, AlertRecord
 from .serializers import (
     TemplateSerializer, RobotSerializer, MessageLogSerializer,
-    MessagePushSerializer
+    MessagePushSerializer, DistributionRuleSerializer, InstanceMappingSerializer,
+    AlertRecordSerializer, RuleTestSerializer
 )
 from .services import MessagePushService
+
+logger = logging.getLogger(__name__)
 
 
 class TemplateViewSet(viewsets.ModelViewSet):
@@ -320,3 +324,302 @@ class PublicMessagePushByNameView(APIView):
             
         except Exception as e:
             return Response({"error": f"消息推送失败: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DistributionRuleViewSet(viewsets.ModelViewSet):
+    """分发规则视图集"""
+    queryset = DistributionRule.objects.all()
+    serializer_class = DistributionRuleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    def test(self, request):
+        """测试分发规则"""
+        from .services import DistributionService
+        
+        serializer = RuleTestSerializer(data=request.data)
+        if serializer.is_valid():
+            rule_type = serializer.validated_data['type']
+            extract_path = serializer.validated_data.get('extract_path', '')
+            extract_pattern = serializer.validated_data.get('extract_pattern', '')
+            test_data = serializer.validated_data['test_data']
+            
+            # 执行测试
+            results = DistributionService.test_rule(
+                rule_type, extract_path, extract_pattern, test_data
+            )
+            
+            return Response({
+                'extracted_values': results,
+                'count': len(results)
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InstanceMappingViewSet(viewsets.ModelViewSet):
+    """实例映射视图集"""
+    queryset = InstanceMapping.objects.all()
+    serializer_class = InstanceMappingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    def batch_configure(self, request):
+        """批量配置实例映射"""
+        instance_ids = request.data.get('instance_ids', [])
+        robot_id = request.data.get('robot_id')
+        
+        if not instance_ids or not robot_id:
+            return Response(
+                {'error': '请提供实例ID列表和机器人ID'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            robot = Robot.objects.get(id=robot_id)
+            instances = InstanceMapping.objects.filter(id__in=instance_ids)
+            
+            updated_count = instances.update(robot=robot)
+            
+            return Response({
+                'message': f'成功配置{updated_count}个实例',
+                'updated_count': updated_count
+            })
+        except Robot.DoesNotExist:
+            return Response(
+                {'error': '机器人不存在'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'批量配置失败: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['post'])
+    def batch_clear(self, request):
+        """批量清除实例映射"""
+        instance_ids = request.data.get('instance_ids', [])
+        
+        if not instance_ids:
+            return Response(
+                {'error': '请提供实例ID列表'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            instances = InstanceMapping.objects.filter(id__in=instance_ids)
+            updated_count = instances.update(robot=None)
+            
+            return Response({
+                'message': f'成功清除{updated_count}个实例的配置',
+                'updated_count': updated_count
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'批量清除失败: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['get'])
+    def alerts(self, request, pk=None):
+        """获取实例的告警记录"""
+        from .models import AlertRecord
+        from .serializers import AlertRecordSerializer
+        
+        instance = self.get_object()
+        alerts = AlertRecord.objects.filter(instance_mapping=instance).order_by('-alert_time')[:20]
+        serializer = AlertRecordSerializer(alerts, many=True)
+        return Response(serializer.data)
+
+
+class DistributionAlertView(APIView):
+    """分发告警视图"""
+    permission_classes = []  # 不需要认证，用于接收外部告警
+    
+    def post(self, request):
+        """处理告警数据"""
+        from .models import DistributionRule
+        from .services import DistributionService
+        
+        try:
+            raw_data = request.body.decode('utf-8')
+            
+            # 获取所有启用的分发规则
+            active_rules = DistributionRule.objects.filter(is_active=True)
+            
+            processed_instances = []
+            for rule in active_rules:
+                # 处理告警数据
+                extracted_values = DistributionService.process_alert_data(rule, raw_data)
+                if extracted_values:
+                    processed_instances.extend(extracted_values)
+            
+            return Response({
+                'message': '告警数据处理成功',
+                'processed_instances': list(set(processed_instances)),
+                'count': len(set(processed_instances))
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'告警处理失败: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class RefreshInstancesView(APIView):
+    """刷新实例数据视图"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """手动刷新实例数据"""
+        # 这里可以添加定期任务或手动触发的实例数据更新逻辑
+        try:
+            # 可以添加更复杂的刷新逻辑，比如：
+            # 1. 清理过期的实例数据
+            # 2. 更新统计信息
+            # 3. 触发重新扫描等
+            
+            return Response({
+                'message': '实例数据刷新成功'
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'刷新失败: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class DistributionPushView(APIView):
+    """分发推送视图 - 根据告警数据自动分发到对应机器人
+    
+    POST /api/public/distribution/push/{template_id}/
+    
+    请求体示例:
+    {
+        "alerts": [
+            {
+                "labels": {
+                    "instance": "dev-2",
+                    "alertname": "ContainerAbsent"
+                },
+                "annotations": {
+                    "description": "容器已停止"
+                }
+            }
+        ]
+    }
+    """
+    permission_classes = []  # 不需要认证，用于接收外部告警
+    
+    def post(self, request, template_id):
+        """处理分发推送请求"""
+        from .models import DistributionRule, InstanceMapping
+        from .services import DistributionService, MessagePushService
+        
+        # 获取模板
+        template = get_object_or_404(Template, pk=template_id)
+        
+        try:
+            raw_data = json.dumps(request.data)
+            content_data = request.data
+            
+            # 获取所有启用的分发规则
+            active_rules = DistributionRule.objects.filter(is_active=True)
+            
+            processed_instances = []
+            success_count = 0
+            error_count = 0
+            results = []
+            
+            for rule in active_rules:
+                try:
+                    # 处理告警数据，提取实例信息
+                    extracted_values = DistributionService.process_alert_data(rule, raw_data)
+                    
+                    for instance_name in extracted_values:
+                        # 查找实例映射
+                        try:
+                            instance_mapping = InstanceMapping.objects.get(
+                                instance_name=instance_name
+                            )
+                            
+                            # 如果实例有配置的机器人，则推送消息
+                            if instance_mapping.robot:
+                                # 确保模板和机器人类型匹配
+                                if template.robot_type == instance_mapping.robot.robot_type:
+                                    # 在消息数据中添加实例信息
+                                    enhanced_data = content_data.copy()
+                                    enhanced_data['instance_name'] = instance_name
+                                    enhanced_data['rule_name'] = rule.name
+                                    
+                                    # 推送消息
+                                    success, error_msg = MessagePushService.push_message(
+                                        template=template,
+                                        robot=instance_mapping.robot,
+                                        data=enhanced_data,
+                                        user=template.created_by
+                                    )
+                                    
+                                    if success:
+                                        success_count += 1
+                                        results.append({
+                                            'instance': instance_name,
+                                            'robot': instance_mapping.robot.name,
+                                            'status': 'success'
+                                        })
+                                    else:
+                                        error_count += 1
+                                        results.append({
+                                            'instance': instance_name,
+                                            'robot': instance_mapping.robot.name,
+                                            'status': 'error',
+                                            'error': error_msg
+                                        })
+                                else:
+                                    error_count += 1
+                                    results.append({
+                                        'instance': instance_name,
+                                        'robot': instance_mapping.robot.name,
+                                        'status': 'error',
+                                        'error': f'模板类型({template.get_robot_type_display()})与机器人类型({instance_mapping.robot.get_robot_type_display()})不匹配'
+                                    })
+                            else:
+                                # 实例没有配置机器人，记录但不推送
+                                results.append({
+                                    'instance': instance_name,
+                                    'robot': None,
+                                    'status': 'skipped',
+                                    'error': '实例未配置机器人'
+                                })
+                                
+                        except InstanceMapping.DoesNotExist:
+                            # 实例映射不存在，记录但不推送
+                            results.append({
+                                'instance': instance_name,
+                                'robot': None,
+                                'status': 'skipped',
+                                'error': '实例映射不存在'
+                            })
+                            
+                        processed_instances.append(instance_name)
+                        
+                except Exception as e:
+                    logger.error(f"处理规则 {rule.name} 时出错: {str(e)}")
+                    continue
+            
+            return Response({
+                'message': f'分发推送完成，成功: {success_count}, 失败: {error_count}',
+                'success_count': success_count,
+                'error_count': error_count,
+                'processed_instances': list(set(processed_instances)),
+                'total_instances': len(set(processed_instances)),
+                'results': results
+            })
+            
+        except Exception as e:
+            logger.error(f"分发推送失败: {str(e)}")
+            return Response(
+                {'error': f'分发推送失败: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
