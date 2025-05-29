@@ -9,13 +9,14 @@ router.register(r'robots', views.RobotViewSet)
 router.register(r'logs', views.MessageLogViewSet)
 router.register(r'distribution/rules', views.DistributionRuleViewSet)
 router.register(r'distribution/instances', views.InstanceMappingViewSet)
+router.register(r'distribution/channels', views.DistributionChannelViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
     path('push/', views.MessagePushView.as_view(), name='message-push'),
     path('public/push/<int:template_id>/<int:robot_id>/', views.PublicMessagePushView.as_view(), name='public-message-push'),
     path('public/push/<int:template_id>/', views.PublicMessagePushByNameView.as_view(), name='public-message-push-by-name'),
-    path('public/distribution/push/<int:template_id>/', views.DistributionPushView.as_view(), name='distribution-push'),
+    path('public/distribution/push/', views.DistributionPushView.as_view(), name='distribution-push'),
     path('templates/<int:template_id>/send/', views.TemplateDirectPushView.as_view(), name='template-direct-push'),
     path('templates/<int:template_id>/info/', views.TemplateInfoView.as_view(), name='template-info'),
     

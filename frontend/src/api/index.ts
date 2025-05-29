@@ -136,6 +136,13 @@ export const distributionApi = {
   deleteRule: (id: number) => apiClient.delete(`/distribution/rules/${id}/`),
   testRule: (data: any) => apiClient.post('/distribution/rules/test/', data),
   
+  // 分发通道相关
+  getChannels: (params?: any) => apiClient.get('/distribution/channels/', { params }),
+  getChannel: (id: number) => apiClient.get(`/distribution/channels/${id}/`),
+  createChannel: (data: any) => apiClient.post('/distribution/channels/', data),
+  updateChannel: (id: number, data: any) => apiClient.patch(`/distribution/channels/${id}/`, data),
+  deleteChannel: (id: number) => apiClient.delete(`/distribution/channels/${id}/`),
+  
   // 实例映射相关
   getInstances: (params?: any) => apiClient.get('/distribution/instances/', { params }),
   getInstance: (id: number) => apiClient.get(`/distribution/instances/${id}/`),

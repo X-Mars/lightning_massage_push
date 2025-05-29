@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Template, Robot, MessageLog, DistributionRule, InstanceMapping, AlertRecord
+from .models import Template, Robot, MessageLog, DistributionRule, InstanceMapping, AlertRecord, DistributionChannel
 
 
 @admin.register(Template)
@@ -33,14 +33,22 @@ class DistributionRuleAdmin(admin.ModelAdmin):
 
 @admin.register(InstanceMapping)
 class InstanceMappingAdmin(admin.ModelAdmin):
-    list_display = ('instance_name', 'robot_count', 'alert_count', 'created_at')
+    list_display = ('instance_name', 'channel_count', 'alert_count', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('instance_name',)
-    filter_horizontal = ('robots',)  # 添加多对多字段的水平过滤器
+    filter_horizontal = ('distribution_channels',)  # 更新为分发通道的多对多字段
     
-    def robot_count(self, obj):
-        return obj.robot_count
-    robot_count.short_description = '机器人数量'
+    def channel_count(self, obj):
+        return obj.channel_count
+    channel_count.short_description = '分发通道数量'
+
+
+@admin.register(DistributionChannel)
+class DistributionChannelAdmin(admin.ModelAdmin):
+    list_display = ('name', 'robot', 'template', 'is_active', 'created_by', 'created_at')
+    list_filter = ('is_active', 'robot__robot_type', 'template__robot_type', 'created_at')
+    search_fields = ('name', 'description', 'robot__name', 'template__name')
+    ordering = ('-updated_at',)
 
 
 @admin.register(AlertRecord)

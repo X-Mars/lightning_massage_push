@@ -94,13 +94,34 @@ export interface DistributionRule {
   updated_at?: string;
 }
 
+// 分发通道类型
+export interface DistributionChannel {
+  id: number;
+  name: string;
+  robot: number;
+  robot_name: string;
+  robot_type: RobotType;
+  template: number;
+  template_name: string;
+  template_robot_type: RobotType;
+  description: string;
+  is_active: boolean;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // 实例映射类型
 export interface InstanceMapping {
   id: number;
   instance_name: string;
-  robot_ids?: number[];        // 关联的机器人ID列表
-  robot_names?: string[];      // 关联的机器人名称列表
-  robot_count?: number;        // 关联的机器人数量
+  channel_ids?: number[];      // 关联的分发通道ID列表
+  channel_names?: string[];    // 关联的分发通道名称列表
+  channel_count?: number;      // 关联的分发通道数量
+  robot_ids?: number[];        // 关联的机器人ID列表（保持向后兼容）
+  robot_names?: string[];      // 关联的机器人名称列表（保持向后兼容）
+  robot_count?: number;        // 关联的机器人数量（保持向后兼容）
   source_rule?: string;
   alert_count: number;
   last_alert_time?: string;

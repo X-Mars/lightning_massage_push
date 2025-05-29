@@ -117,7 +117,7 @@
           <div class="distribution-section">
             <div class="distribution-header">
               <h5>分发推送接口</h5>
-              <p class="description">根据告警数据自动分发到对应的机器人通道</p>
+              <p class="description">根据告警数据自动分发到对应的机器人绑定</p>
             </div>
             
             <el-table
@@ -130,14 +130,14 @@
               <el-table-column prop="template_name" label="模板名称" min-width="180" />
               <el-table-column prop="robot_type_name" label="适用机器人类型" width="150" />
               <el-table-column label="分发接口地址 (点击复制)" min-width="400">
-                <template #default="scope">
+                <template #default>
                   <div class="api-url-container">
                     <div 
                       class="api-url-text api-url-clickable distribution-url"
-                      @click="copyDistributionUrl(scope.row.template_id)"
+                      @click="copyDistributionUrl()"
                       title="点击复制分发接口地址"
                     >
-                      {{ getDistributionUrl(scope.row.template_id) }}
+                      {{ getDistributionUrl() }}
                     </div>
                   </div>
                 </template>
@@ -520,15 +520,15 @@ const getDistributionTemplates = () => {
 };
 
 // 获取分发接口地址
-const getDistributionUrl = (templateId: number) => {
+const getDistributionUrl = () => {
   const baseUrl = window.location.origin;
-  return `${baseUrl}/api/public/distribution/push/${templateId}/`;
+  return `${baseUrl}/api/public/distribution/push/`;
 };
 
 // 复制分发接口地址
-const copyDistributionUrl = async (templateId: number) => {
+const copyDistributionUrl = async () => {
   try {
-    const url = getDistributionUrl(templateId);
+    const url = getDistributionUrl();
     await toClipboard(url);
     ElMessage.success('分发接口地址已复制到剪贴板');
   } catch (e) {
@@ -542,7 +542,7 @@ const showDistributionDocs = async (templateId: number) => {
   currentTemplateId.value = templateId;
   
   // 设置分发API URL
-  currentApiUrl.value = getDistributionUrl(templateId);
+  currentApiUrl.value = getDistributionUrl();
   
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);
@@ -600,7 +600,7 @@ const testDistributionApi = async (templateId: number) => {
   currentTestMode.value = 'distribution';
   
   // 设置分发API URL
-  currentApiUrl.value = getDistributionUrl(templateId);
+  currentApiUrl.value = getDistributionUrl();
   
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);

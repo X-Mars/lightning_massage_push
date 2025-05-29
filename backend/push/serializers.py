@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Template, Robot, MessageLog, DistributionRule, InstanceMapping, AlertRecord, DistributionRule, InstanceMapping, AlertRecord
+from .models import Template, Robot, MessageLog, DistributionRule, InstanceMapping, AlertRecord, DistributionChannel
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -136,19 +136,27 @@ class DistributionRuleSerializer(serializers.ModelSerializer):
 
 class InstanceMappingSerializer(serializers.ModelSerializer):
     """实例映射序列化器"""
-    robot_names = serializers.SerializerMethodField()
-    robot_ids = serializers.ListField(
+    channel_names = serializers.SerializerMethodField()
+    channel_ids = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=False,
         required=False,
         allow_empty=True
     )
-    robot_count = serializers.SerializerMethodField()
+    channel_count = serializers.SerializerMethodField()
+    robot_names = serializers.SerializerMethodField()  # 保持向后兼容
+    robot_count = serializers.SerializerMethodField()  # 保持向后兼容
     source_rule_name = serializers.CharField(source='source_rule.name', read_only=True)
     created_at = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
     last_alert_time = serializers.SerializerMethodField()
 
+    def get_channel_names(self, obj):
+        return obj.channel_names
+    
+    def get_channel_count(self, obj):
+        return obj.channel_count
+    
     def get_robot_names(self, obj):
         return obj.robot_names
     
@@ -167,29 +175,30 @@ class InstanceMappingSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """自定义序列化输出"""
         data = super().to_representation(instance)
-        # 在输出时添加robot_ids
-        data['robot_ids'] = list(instance.robots.values_list('id', flat=True))
+        # 在输出时添加channel_ids和robot_ids（保持向后兼容）
+        data['channel_ids'] = list(instance.distribution_channels.values_list('id', flat=True))
+        data['robot_ids'] = list(instance.distribution_channels.values_list('robot__id', flat=True))
         return data
     
     def update(self, instance, validated_data):
         """自定义更新逻辑"""
-        robot_ids = validated_data.pop('robot_ids', None)
+        channel_ids = validated_data.pop('channel_ids', None)
         
         # 更新其他字段
         instance = super().update(instance, validated_data)
         
-        # 如果提供了robot_ids，更新关联的机器人
-        if robot_ids is not None:
-            if robot_ids:
-                # 验证机器人是否存在
-                from .models import Robot
-                robots = Robot.objects.filter(id__in=robot_ids)
-                if robots.count() != len(robot_ids):
-                    raise serializers.ValidationError("部分机器人不存在")
-                instance.robots.set(robot_ids)
+        # 如果提供了channel_ids，更新关联的分发通道
+        if channel_ids is not None:
+            if channel_ids:
+                # 验证分发通道是否存在
+                from .models import DistributionChannel
+                channels = DistributionChannel.objects.filter(id__in=channel_ids)
+                if channels.count() != len(channel_ids):
+                    raise serializers.ValidationError("部分分发通道不存在")
+                instance.distribution_channels.set(channel_ids)
             else:
                 # 如果是空列表，清除所有关联
-                instance.robots.clear()
+                instance.distribution_channels.clear()
         
         return instance
     
@@ -228,4 +237,40 @@ class RuleTestSerializer(serializers.Serializer):
         elif rule_type == 'string':
             if not data.get('extract_pattern'):
                 raise serializers.ValidationError({'extract_pattern': '字符串模式下必须指定提取模式'})
+        return data
+
+
+class DistributionChannelSerializer(serializers.ModelSerializer):
+    """分发通道序列化器"""
+    robot_name = serializers.CharField(source='robot.name', read_only=True)
+    robot_type = serializers.CharField(source='robot.robot_type', read_only=True)
+    template_name = serializers.CharField(source='template.name', read_only=True)
+    template_robot_type = serializers.CharField(source='template.robot_type', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    created_at = serializers.SerializerMethodField()
+    updated_at = serializers.SerializerMethodField()
+
+    def get_created_at(self, obj):
+        return obj.created_at.strftime('%Y-%m-%d %H:%M:%S') if obj.created_at else None
+    
+    def get_updated_at(self, obj):
+        return obj.updated_at.strftime('%Y-%m-%d %H:%M:%S') if obj.updated_at else None
+    
+    class Meta:
+        model = DistributionChannel
+        fields = '__all__'
+        read_only_fields = ['created_by', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        validated_data['created_by'] = self.context['request'].user
+        return super().create(validated_data)
+    
+    def validate(self, data):
+        """验证机器人和模板类型是否匹配"""
+        robot = data.get('robot')
+        template = data.get('template')
+        
+        if robot and template and robot.robot_type != template.robot_type:
+            raise serializers.ValidationError("机器人类型与模板类型不匹配")
+        
         return data

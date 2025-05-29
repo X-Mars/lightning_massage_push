@@ -105,12 +105,12 @@ class DistributionRule(models.Model):
 class InstanceMapping(models.Model):
     """实例映射"""
     instance_name = models.CharField(max_length=255, unique=True, verbose_name="实例名称")
-    robots = models.ManyToManyField(Robot, blank=True, related_name='instance_mappings', verbose_name="配置机器人")
+    distribution_channels = models.ManyToManyField('DistributionChannel', blank=True, related_name='instance_mappings', verbose_name="配置分发通道")
     source_rule = models.ForeignKey(DistributionRule, on_delete=models.SET_NULL, null=True, blank=True,
                                   related_name='instance_mappings', verbose_name="来源规则")
     alert_count = models.IntegerField(default=0, verbose_name="告警次数")
     last_alert_time = models.DateTimeField(null=True, blank=True, verbose_name="最后告警时间")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="更新时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
     
     class Meta:
@@ -122,14 +122,24 @@ class InstanceMapping(models.Model):
         return self.instance_name
     
     @property
+    def channel_names(self):
+        """获取关联的分发通道名称列表"""
+        return list(self.distribution_channels.values_list('name', flat=True))
+    
+    @property
+    def channel_count(self):
+        """获取关联的分发通道数量"""
+        return self.distribution_channels.count()
+    
+    @property
     def robot_names(self):
-        """获取关联的机器人名称列表"""
-        return list(self.robots.values_list('name', flat=True))
+        """获取关联的机器人名称列表（保持向后兼容）"""
+        return list(self.distribution_channels.values_list('robot__name', flat=True))
     
     @property
     def robot_count(self):
-        """获取关联的机器人数量"""
-        return self.robots.count()
+        """获取关联的机器人数量（保持向后兼容）"""
+        return self.distribution_channels.count()
 
 
 class AlertRecord(models.Model):
@@ -150,3 +160,25 @@ class AlertRecord(models.Model):
     
     def __str__(self):
         return f"{self.instance_mapping.instance_name} - {self.alert_time}"
+
+
+class DistributionChannel(models.Model):
+    """分发通道 - 一对一绑定机器人和消息模板"""
+    name = models.CharField(max_length=100, verbose_name="通道名称")
+    robot = models.ForeignKey(Robot, on_delete=models.CASCADE, related_name='distribution_channels', verbose_name="绑定机器人")
+    template = models.ForeignKey(Template, on_delete=models.CASCADE, related_name='distribution_channels', verbose_name="绑定模板")
+    description = models.TextField(blank=True, verbose_name="通道描述")
+    is_active = models.BooleanField(default=True, verbose_name="是否启用")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='distribution_channels', verbose_name="创建者")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    
+    class Meta:
+        verbose_name = "分发通道"
+        verbose_name_plural = verbose_name
+        ordering = ['-updated_at']
+        # 确保同一个机器人和模板只能绑定一次
+        unique_together = ['robot', 'template']
+    
+    def __str__(self):
+        return f"{self.name} ({self.robot.name} -> {self.template.name})"

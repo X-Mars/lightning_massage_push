@@ -144,11 +144,22 @@ const routes: Array<RouteRecordRaw> = [
             }
           },
           {
+            path: 'channels',
+            name: 'DistributionChannels',
+            component: () => import('../views/distribution/ChannelList.vue'),
+            meta: {
+              title: '分发通道',
+              icon: 'Connection',
+              showInMenu: true,
+              parent: 'Distribution'
+            }
+          },
+          {
             path: 'mapping',
             name: 'DistributionMapping',
             component: () => import('../views/distribution/MappingConfig.vue'),
             meta: {
-              title: '分发通道',
+              title: '分发绑定',
               icon: 'Setting',
               showInMenu: true,
               parent: 'Distribution'
