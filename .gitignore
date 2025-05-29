@@ -1,1 +1,3 @@
 backend/.idea
+__pycache__/
+backend/push/__pycache__/admin.cpython-313.pyc
