@@ -15,6 +15,7 @@
     "echarts": "^5.6.0",
     "element-plus": "^2.9.10",
     "marked": "^15.0.12",
+    "md-editor-v3": "^5.6.0",
     "nunjucks": "^3.2.4",
     "pinia": "^3.0.2",
     "pinyin": "^4.0.0",
