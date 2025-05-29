@@ -98,8 +98,9 @@ export interface DistributionRule {
 export interface InstanceMapping {
   id: number;
   instance_name: string;
-  robot_id?: number;
-  robot_name?: string;
+  robot_ids?: number[];        // 关联的机器人ID列表
+  robot_names?: string[];      // 关联的机器人名称列表
+  robot_count?: number;        // 关联的机器人数量
   source_rule?: string;
   alert_count: number;
   last_alert_time?: string;
