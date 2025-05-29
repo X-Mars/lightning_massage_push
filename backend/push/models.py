@@ -105,7 +105,8 @@ class DistributionRule(models.Model):
 class InstanceMapping(models.Model):
     """实例映射"""
     instance_name = models.CharField(max_length=255, unique=True, verbose_name="实例名称")
-    robots = models.ManyToManyField(Robot, blank=True, related_name='instance_mappings', verbose_name="配置机器人")
+    robot = models.ForeignKey(Robot, on_delete=models.SET_NULL, null=True, blank=True, 
+                            related_name='instance_mappings', verbose_name="配置机器人")
     source_rule = models.ForeignKey(DistributionRule, on_delete=models.SET_NULL, null=True, blank=True,
                                   related_name='instance_mappings', verbose_name="来源规则")
     alert_count = models.IntegerField(default=0, verbose_name="告警次数")
@@ -120,16 +121,6 @@ class InstanceMapping(models.Model):
     
     def __str__(self):
         return self.instance_name
-    
-    @property
-    def robot_names(self):
-        """获取关联的机器人名称列表"""
-        return list(self.robots.values_list('name', flat=True))
-    
-    @property
-    def robot_count(self):
-        """获取关联的机器人数量"""
-        return self.robots.count()
 
 
 class AlertRecord(models.Model):

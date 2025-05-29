@@ -136,24 +136,11 @@ class DistributionRuleSerializer(serializers.ModelSerializer):
 
 class InstanceMappingSerializer(serializers.ModelSerializer):
     """实例映射序列化器"""
-    robot_names = serializers.SerializerMethodField()
-    robot_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=False,
-        required=False,
-        allow_empty=True
-    )
-    robot_count = serializers.SerializerMethodField()
+    robot_name = serializers.CharField(source='robot.name', read_only=True)
     source_rule_name = serializers.CharField(source='source_rule.name', read_only=True)
     created_at = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
     last_alert_time = serializers.SerializerMethodField()
-
-    def get_robot_names(self, obj):
-        return obj.robot_names
-    
-    def get_robot_count(self, obj):
-        return obj.robot_count
 
     def get_created_at(self, obj):
         return obj.created_at.strftime('%Y-%m-%d %H:%M:%S') if obj.created_at else None
@@ -163,35 +150,6 @@ class InstanceMappingSerializer(serializers.ModelSerializer):
     
     def get_last_alert_time(self, obj):
         return obj.last_alert_time.strftime('%Y-%m-%d %H:%M:%S') if obj.last_alert_time else None
-    
-    def to_representation(self, instance):
-        """自定义序列化输出"""
-        data = super().to_representation(instance)
-        # 在输出时添加robot_ids
-        data['robot_ids'] = list(instance.robots.values_list('id', flat=True))
-        return data
-    
-    def update(self, instance, validated_data):
-        """自定义更新逻辑"""
-        robot_ids = validated_data.pop('robot_ids', None)
-        
-        # 更新其他字段
-        instance = super().update(instance, validated_data)
-        
-        # 如果提供了robot_ids，更新关联的机器人
-        if robot_ids is not None:
-            if robot_ids:
-                # 验证机器人是否存在
-                from .models import Robot
-                robots = Robot.objects.filter(id__in=robot_ids)
-                if robots.count() != len(robot_ids):
-                    raise serializers.ValidationError("部分机器人不存在")
-                instance.robots.set(robot_ids)
-            else:
-                # 如果是空列表，清除所有关联
-                instance.robots.clear()
-        
-        return instance
     
     class Meta:
         model = InstanceMapping
