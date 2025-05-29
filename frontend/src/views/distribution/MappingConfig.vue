@@ -95,8 +95,8 @@
         </el-table-column>
         <el-table-column prop="source_rule" label="来源规则" min-width="150" show-overflow-tooltip>
           <template #default="scope">
-            <el-tag v-if="scope.row.source_rule" type="info" size="small">
-              {{ scope.row.source_rule }}
+            <el-tag v-if="scope.row.source_rule_name" type="info" size="small">
+              {{ scope.row.source_rule_name }}
             </el-tag>
             <span v-else>-</span>
           </template>
