@@ -101,6 +101,72 @@
             </div>
           </div>
         </div>
+
+        <!-- 高级分发接口分组 -->
+        <div class="distribution-group" v-if="templates.length > 0">
+          <div class="group-header">
+            <h4>
+              <el-icon><Operation /></el-icon>
+              高级分发接口
+            </h4>
+            <el-tag type="warning" size="small">
+              智能分发
+            </el-tag>
+          </div>
+          
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <h5>分发推送接口</h5>
+              <p class="description">根据告警数据自动分发到对应的机器人通道</p>
+            </div>
+            
+            <el-table
+              :data="getDistributionTemplates()"
+              stripe
+              border
+              size="small"
+              style="width: 100%"
+            >
+              <el-table-column prop="template_name" label="模板名称" min-width="180" />
+              <el-table-column prop="robot_type_name" label="适用机器人类型" width="150" />
+              <el-table-column label="分发接口地址 (点击复制)" min-width="400">
+                <template #default="scope">
+                  <div class="api-url-container">
+                    <div 
+                      class="api-url-text api-url-clickable distribution-url"
+                      @click="copyDistributionUrl(scope.row.template_id)"
+                      title="点击复制分发接口地址"
+                    >
+                      {{ getDistributionUrl(scope.row.template_id) }}
+                    </div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="180">
+                <template #default="scope">
+                  <el-button 
+                    type="warning" 
+                    size="small" 
+                    @click="showDistributionDocs(scope.row.template_id)" 
+                    plain
+                  >
+                    <el-icon><InfoFilled /></el-icon>
+                    分发说明
+                  </el-button>
+                  <el-button 
+                    type="success" 
+                    size="small" 
+                    @click="testDistributionApi(scope.row.template_id)"
+                    plain
+                  >
+                    <el-icon><Connection /></el-icon>
+                    测试
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
         
         <!-- 空状态展示 -->
         <el-empty v-else description="暂无数据，请先创建机器人和模板" />
@@ -261,7 +327,8 @@ import {
   Refresh, 
   InfoFilled, 
   Connection,
-  ArrowDown
+  ArrowDown,
+  Operation
 } from '@element-plus/icons-vue';
 
 // 存储
@@ -306,7 +373,7 @@ const testDialogVisible = ref(false);
 const testRequestData = ref('');
 const testResult = ref<any>(null);
 const testLoading = ref(false);
-const currentTestMode = ref<'id' | 'name'>('id'); // 'id' 或 'name'
+const currentTestMode = ref<'id' | 'name' | 'distribution'>('id'); // 'id'、'name' 或 'distribution'
 
 // 获取机器人类型标签样式
 const getRobotTypeTagType = (type: RobotType) => {
@@ -438,6 +505,136 @@ const copyExampleJson = async () => {
       console.error('复制失败', e);
       ElMessage.error('复制失败，请手动复制');
     }
+  }
+};
+
+// === 分发接口相关方法 ===
+
+// 获取分发模板列表
+const getDistributionTemplates = () => {
+  return templates.value.map(template => ({
+    template_id: template.id,
+    template_name: template.name,
+    robot_type_name: getRobotTypeName(template.robot_type)
+  }));
+};
+
+// 获取分发接口地址
+const getDistributionUrl = (templateId: number) => {
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/api/public/distribution/push/${templateId}/`;
+};
+
+// 复制分发接口地址
+const copyDistributionUrl = async (templateId: number) => {
+  try {
+    const url = getDistributionUrl(templateId);
+    await toClipboard(url);
+    ElMessage.success('分发接口地址已复制到剪贴板');
+  } catch (e) {
+    console.error('复制失败', e);
+    ElMessage.error('复制失败，请手动复制');
+  }
+};
+
+// 显示分发接口文档
+const showDistributionDocs = async (templateId: number) => {
+  currentTemplateId.value = templateId;
+  
+  // 设置分发API URL
+  currentApiUrl.value = getDistributionUrl(templateId);
+  
+  // 获取模板信息
+  const info = await fetchTemplateInfo(templateId);
+  if (info) {
+    // 为分发接口创建特殊的模板信息
+    currentTemplateInfo.value = {
+      ...info,
+      name: `${info.name} (分发模式)`,
+      robot_type_name: '智能分发',
+      variables: ['alerts', 'instance_name', 'rule_name', ...info.variables],
+      example_json: {
+        receiver: "web\\.hook\\.prometheusalert",
+        status: "firing",
+        alerts: [
+          {
+            status: "firing",
+            labels: {
+              alertname: "HighCPUUsage",
+              instance: "server-001",
+              job: "node-exporter",
+              severity: "warning"
+            },
+            annotations: {
+              description: "CPU使用率超过80%",
+              summary: "服务器CPU使用率过高"
+            },
+            startsAt: "2024-01-01T00:00:00.000Z",
+            endsAt: "0001-01-01T00:00:00Z",
+            generatorURL: "http://prometheus:9090/graph?g0.expr=...",
+            fingerprint: "abc123def456"
+          }
+        ],
+        groupLabels: {
+          instance: "server-001"
+        },
+        commonLabels: {
+          instance: "server-001",
+          job: "node-exporter",
+          severity: "warning"
+        },
+        commonAnnotations: {
+          summary: "服务器CPU使用率过高"
+        },
+        externalURL: "http://alertmanager:9093",
+        version: "4"
+      }
+    };
+    docsDialogVisible.value = true;
+  }
+};
+
+// 测试分发接口
+const testDistributionApi = async (templateId: number) => {
+  currentTemplateId.value = templateId;
+  currentTestMode.value = 'distribution';
+  
+  // 设置分发API URL
+  currentApiUrl.value = getDistributionUrl(templateId);
+  
+  // 获取模板信息
+  const info = await fetchTemplateInfo(templateId);
+  if (info) {
+    currentTemplateInfo.value = {
+      ...info,
+      name: `${info.name} (分发测试)`
+    };
+    
+    // 设置分发测试数据
+    testRequestData.value = JSON.stringify({
+      receiver: "web\\.hook\\.prometheusalert",
+      status: "firing",
+      alerts: [
+        {
+          status: "firing",
+          labels: {
+            alertname: "HighCPUUsage",
+            instance: "server-001",
+            job: "node-exporter",
+            severity: "warning"
+          },
+          annotations: {
+            description: "CPU使用率超过80%",
+            summary: "服务器CPU使用率过高"
+          },
+          startsAt: "2024-01-01T00:00:00.000Z",
+          endsAt: "0001-01-01T00:00:00Z"
+        }
+      ]
+    }, null, 2);
+    
+    testResult.value = null;
+    testDialogVisible.value = true;
   }
 };
 
@@ -589,6 +786,47 @@ onMounted(() => {
 
 .robot-group {
   margin-bottom: 30px;
+}
+
+.distribution-group {
+  margin-bottom: 30px;
+  border: 2px dashed #f5a623;
+  border-radius: 8px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3d0 100%);
+}
+
+.distribution-section {
+  margin-bottom: 20px;
+}
+
+.distribution-header {
+  margin-bottom: 15px;
+  padding-left: 10px;
+  border-left: 3px solid #f5a623;
+}
+
+.distribution-header h5 {
+  margin: 0;
+  color: #606266;
+  font-size: 16px;
+}
+
+.distribution-header .description {
+  margin: 5px 0 0 0;
+  color: #909399;
+  font-size: 13px;
+}
+
+.distribution-url {
+  background: linear-gradient(135deg, #fff2cc 0%, #ffe6a3 100%);
+  border: 1px solid #f5a623;
+}
+
+.distribution-url:hover {
+  background: linear-gradient(135deg, #ffe6a3 0%, #ffd966 100%);
+  border-color: #e6940f;
+  color: #bf7506;
 }
 
 .group-header {

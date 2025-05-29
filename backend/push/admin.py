@@ -33,9 +33,14 @@ class DistributionRuleAdmin(admin.ModelAdmin):
 
 @admin.register(InstanceMapping)
 class InstanceMappingAdmin(admin.ModelAdmin):
-    list_display = ('instance_name', 'robot', 'alert_count', 'created_at')
+    list_display = ('instance_name', 'robot_count', 'alert_count', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('instance_name',)
+    filter_horizontal = ('robots',)  # 添加多对多字段的水平过滤器
+    
+    def robot_count(self, obj):
+        return obj.robot_count
+    robot_count.short_description = '机器人数量'
 
 
 @admin.register(AlertRecord)

@@ -101,23 +101,22 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="robot_name" label="配置机器人" min-width="200">
+        <el-table-column prop="robot_names" label="配置机器人" min-width="250">
           <template #default="scope">
-            <el-select
-              v-model="scope.row.robot_id"
-              placeholder="选择机器人"
-              @change="updateMapping(scope.row)"
-              clearable
-              style="width: 100%"
-              size="small"
-            >
-              <el-option
-                v-for="robot in robots"
-                :key="robot.id"
-                :label="robot.name"
-                :value="robot.id"
-              />
-            </el-select>
+            <div class="robot-tags">
+              <el-tag
+                v-for="robotName in scope.row.robot_names || []"
+                :key="robotName"
+                type="success"
+                size="small"
+                style="margin-right: 4px; margin-bottom: 2px;"
+              >
+                {{ robotName }}
+              </el-tag>
+              <el-tag v-if="!scope.row.robot_names || scope.row.robot_names.length === 0" type="info" size="small">
+                未配置
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="last_alert_time" label="最后告警时间" width="180" show-overflow-tooltip>
@@ -135,13 +134,22 @@
         </el-table-column>
         <el-table-column label="状态" width="90" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.robot_id ? 'success' : 'warning'" size="small">
-              {{ scope.row.robot_id ? '已配置' : '未配置' }}
+            <el-tag :type="(scope.row.robot_count && scope.row.robot_count > 0) ? 'success' : 'warning'" size="small">
+              {{ (scope.row.robot_count && scope.row.robot_count > 0) ? '已配置' : '未配置' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" align="center">
+        <el-table-column label="操作" width="200" align="center">
           <template #default="scope">
+            <el-button
+              type="primary"
+              size="small"
+              @click="editInstanceRobots(scope.row)"
+              plain
+            >
+              <el-icon><Edit /></el-icon>
+              编辑机器人
+            </el-button>
             <el-button
               type="primary"
               size="small"
@@ -150,15 +158,6 @@
             >
               <el-icon><View /></el-icon>
               详情
-            </el-button>
-            <el-button
-              type="danger"
-              size="small"
-              @click="clearMapping(scope.row)"
-              plain
-              v-if="scope.row.robot_id"
-            >
-              清除
             </el-button>
           </template>
         </el-table-column>
@@ -179,17 +178,73 @@
     </el-card>
 
     <!-- 批量配置对话框 -->
-    <el-dialog v-model="showBatchDialog" title="批量配置机器人" width="500px">
+    <el-dialog v-model="showBatchDialog" title="批量配置机器人" width="600px">
       <el-form :model="batchForm" label-width="120px">
         <el-form-item label="选择机器人">
-          <el-select v-model="batchForm.robot_id" placeholder="请选择机器人" style="width: 100%">
-            <el-option
-              v-for="robot in robots"
-              :key="robot.id"
-              :label="robot.name"
-              :value="robot.id"
-            />
-          </el-select>
+          <div class="robot-selection">
+            <div class="selection-header">
+              <el-button 
+                size="small" 
+                @click="selectAllRobotsForBatch"
+                :disabled="batchForm.robot_ids.length === robots.length"
+              >
+                全选
+              </el-button>
+              <el-button 
+                size="small" 
+                @click="clearAllRobotsForBatch"
+                :disabled="batchForm.robot_ids.length === 0"
+              >
+                清空
+              </el-button>
+              <span class="selection-count">
+                已选择 {{ batchForm.robot_ids.length }} / {{ robots.length }} 个机器人
+              </span>
+            </div>
+            <el-select 
+              v-model="batchForm.robot_ids" 
+              placeholder="请选择机器人" 
+              style="width: 100%; margin-top: 8px;" 
+              multiple 
+              collapse-tags
+              collapse-tags-tooltip
+              :max-collapse-tags="3"
+              filterable
+            >
+              <el-option
+                v-for="robot in robots"
+                :key="robot.id"
+                :label="`${robot.name} (${getRobotTypeLabel(robot.robot_type)})`"
+                :value="robot.id"
+              >
+                <div class="robot-option">
+                  <span class="robot-name">{{ robot.name }}</span>
+                  <el-tag 
+                    :type="getRobotTypeTagType(robot.robot_type)" 
+                    size="small"
+                    style="margin-left: 8px;"
+                  >
+                    {{ getRobotTypeLabel(robot.robot_type) }}
+                  </el-tag>
+                </div>
+              </el-option>
+            </el-select>
+          </div>
+        </el-form-item>
+        <el-form-item label="预览配置" v-if="batchForm.robot_ids.length > 0">
+          <div class="preview-robots">
+            <el-tag
+              v-for="robotId in batchForm.robot_ids"
+              :key="robotId"
+              type="success"
+              size="small"
+              style="margin-right: 4px; margin-bottom: 2px;"
+              closable
+              @close="removeRobotFromBatch(robotId)"
+            >
+              {{ getRobotNameById(robotId) }}
+            </el-tag>
+          </div>
         </el-form-item>
         <el-form-item label="选择的实例">
           <div class="selected-instances">
@@ -214,6 +269,46 @@
       </template>
     </el-dialog>
 
+    <!-- 单个实例多机器人编辑对话框 -->
+    <el-dialog v-model="showEditDialog" title="编辑实例机器人配置" width="1000px">
+      <div v-if="editingInstance">
+        <el-form :model="editForm" label-width="120px">
+          <el-form-item label="实例名称">
+            <el-input v-model="editingInstance.instance_name" disabled />
+          </el-form-item>
+          <el-form-item label="">
+            <el-checkbox-group v-model="editForm.robot_ids" class="robot-checkbox-group-clean">
+              <el-checkbox
+                v-for="robot in robots"
+                :key="robot.id"
+                :label="robot.id"
+                class="robot-checkbox-item"
+              >
+                <div class="robot-checkbox-content">
+                  <span class="robot-name">{{ robot.name }}</span>
+                  <el-tag 
+                    :type="getRobotTypeTagType(robot.robot_type)" 
+                    size="small"
+                    class="robot-type-tag"
+                  >
+                    {{ getRobotTypeLabel(robot.robot_type) }}
+                  </el-tag>
+                </div>
+              </el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showEditDialog = false">取消</el-button>
+          <el-button type="primary" @click="saveInstanceRobots" :loading="editSaving">
+            保存配置
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 实例详情对话框 -->
     <el-dialog v-model="showDetailDialog" title="实例详情" width="800px">
       <div v-if="currentInstance">
@@ -222,9 +317,16 @@
             {{ currentInstance.instance_name }}
           </el-descriptions-item>
           <el-descriptions-item label="配置机器人">
-            <el-tag v-if="currentInstance.robot_name" type="success">
-              {{ currentInstance.robot_name }}
-            </el-tag>
+            <div v-if="currentInstance.robot_names && currentInstance.robot_names.length > 0">
+              <el-tag
+                v-for="robotName in currentInstance.robot_names"
+                :key="robotName"
+                type="success"
+                style="margin-right: 4px; margin-bottom: 2px;"
+              >
+                {{ robotName }}
+              </el-tag>
+            </div>
             <span v-else>未配置</span>
           </el-descriptions-item>
           <el-descriptions-item label="来源规则">
@@ -262,7 +364,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Refresh, Search, View } from '@element-plus/icons-vue';
+import { Refresh, Search, View, Edit } from '@element-plus/icons-vue';
 import { distributionApi, robotApi } from '../../api';
 import type { InstanceMapping, Robot, AlertRecord } from '../../types';
 
@@ -270,6 +372,7 @@ import type { InstanceMapping, Robot, AlertRecord } from '../../types';
 const loading = ref(false);
 const refreshLoading = ref(false);
 const batchSaving = ref(false);
+const editSaving = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('');
 const robotFilter = ref<number | ''>('');
@@ -281,12 +384,18 @@ const robots = ref<Robot[]>([]);
 const selectedInstances = ref<InstanceMapping[]>([]);
 const showBatchDialog = ref(false);
 const showDetailDialog = ref(false);
+const showEditDialog = ref(false);
 const currentInstance = ref<InstanceMapping | null>(null);
+const editingInstance = ref<InstanceMapping | null>(null);
 const instanceAlerts = ref<AlertRecord[]>([]);
 
 // 表单数据
 const batchForm = reactive({
-  robot_id: undefined as number | undefined
+  robot_ids: [] as number[]
+});
+
+const editForm = reactive({
+  robot_ids: [] as number[]
 });
 
 // 计算属性
@@ -304,9 +413,9 @@ const filteredInstances = computed(() => {
   if (statusFilter.value) {
     filtered = filtered.filter(instance => {
       if (statusFilter.value === 'configured') {
-        return instance.robot_id;
+        return instance.robot_count && instance.robot_count > 0;
       } else if (statusFilter.value === 'unconfigured') {
-        return !instance.robot_id;
+        return !instance.robot_count || instance.robot_count === 0;
       }
       return true;
     });
@@ -314,18 +423,20 @@ const filteredInstances = computed(() => {
 
   // 机器人过滤
   if (robotFilter.value) {
-    filtered = filtered.filter(instance => instance.robot_id === robotFilter.value);
+    filtered = filtered.filter(instance => 
+      instance.robot_ids && instance.robot_ids.includes(robotFilter.value as number)
+    );
   }
 
   return filtered;
 });
 
 const configuredCount = computed(() => 
-  instances.value.filter(instance => instance.robot_id).length
+  instances.value.filter(instance => instance.robot_count && instance.robot_count > 0).length
 );
 
 const unconfiguredCount = computed(() => 
-  instances.value.filter(instance => !instance.robot_id).length
+  instances.value.filter(instance => !instance.robot_count || instance.robot_count === 0).length
 );
 
 // 方法实现
@@ -357,29 +468,8 @@ const fetchRobots = async () => {
   }
 };
 
-const updateMapping = async (instance: InstanceMapping) => {
-  try {
-    await distributionApi.updateInstanceMapping(instance.id, {
-      robot_id: instance.robot_id
-    });
-
-    // 更新本地数据
-    if (instance.robot_id) {
-      const robot = robots.value.find(r => r.id === instance.robot_id);
-      instance.robot_name = robot?.name;
-    } else {
-      instance.robot_name = undefined;
-    }
-
-    ElMessage.success('配置更新成功');
-  } catch (error) {
-    console.error('配置更新失败:', error);
-    ElMessage.error('配置更新失败');
-  }
-};
-
 const batchConfigureMapping = async () => {
-  if (!batchForm.robot_id) {
+  if (!batchForm.robot_ids || batchForm.robot_ids.length === 0) {
     ElMessage.warning('请选择机器人');
     return;
   }
@@ -388,25 +478,62 @@ const batchConfigureMapping = async () => {
   try {
     await distributionApi.batchConfigureMapping({
       instance_ids: selectedInstances.value.map(i => i.id),
-      robot_id: batchForm.robot_id
+      robot_ids: batchForm.robot_ids
     });
 
     // 更新本地数据
-    const robot = robots.value.find(r => r.id === batchForm.robot_id);
     selectedInstances.value.forEach(instance => {
-      instance.robot_id = batchForm.robot_id as number;
-      instance.robot_name = robot?.name;
+      instance.robot_ids = [...batchForm.robot_ids];
+      instance.robot_names = batchForm.robot_ids.map(id => {
+        const robot = robots.value.find(r => r.id === id);
+        return robot?.name || '';
+      }).filter(Boolean);
+      instance.robot_count = batchForm.robot_ids.length;
     });
 
     ElMessage.success('批量配置成功');
     showBatchDialog.value = false;
     selectedInstances.value = [];
-    batchForm.robot_id = undefined;
+    batchForm.robot_ids = [];
   } catch (error) {
     console.error('批量配置失败:', error);
     ElMessage.error('批量配置失败');
   } finally {
     batchSaving.value = false;
+  }
+};
+
+const editInstanceRobots = (instance: InstanceMapping) => {
+  editingInstance.value = instance;
+  editForm.robot_ids = [...(instance.robot_ids || [])];
+  showEditDialog.value = true;
+};
+
+const saveInstanceRobots = async () => {
+  if (!editingInstance.value) return;
+
+  editSaving.value = true;
+  try {
+    await distributionApi.updateInstanceMapping(editingInstance.value.id, {
+      robot_ids: editForm.robot_ids
+    });
+
+    // 更新本地数据
+    editingInstance.value.robot_ids = [...editForm.robot_ids];
+    editingInstance.value.robot_names = editForm.robot_ids.map(id => {
+      const robot = robots.value.find(r => r.id === id);
+      return robot?.name || '';
+    }).filter(Boolean);
+    editingInstance.value.robot_count = editForm.robot_ids.length;
+
+    ElMessage.success('配置更新成功');
+    showEditDialog.value = false;
+    editingInstance.value = null;
+  } catch (error) {
+    console.error('配置更新失败:', error);
+    ElMessage.error('配置更新失败');
+  } finally {
+    editSaving.value = false;
   }
 };
 
@@ -422,8 +549,9 @@ const batchClearMapping = async () => {
 
     // 更新本地数据
     selectedInstances.value.forEach(instance => {
-      instance.robot_id = undefined;
-      instance.robot_name = undefined;
+      instance.robot_ids = [];
+      instance.robot_names = [];
+      instance.robot_count = 0;
     });
 
     ElMessage.success('批量清除成功');
@@ -432,22 +560,6 @@ const batchClearMapping = async () => {
     if (error !== 'cancel') {
       console.error('批量清除失败:', error);
       ElMessage.error('批量清除失败');
-    }
-  }
-};
-
-const clearMapping = async (instance: InstanceMapping) => {
-  try {
-    await ElMessageBox.confirm('确定要清除此实例的机器人配置吗？', '确认清除', {
-      type: 'warning'
-    });
-
-    instance.robot_id = undefined;
-    instance.robot_name = undefined;
-    await updateMapping(instance);
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('清除配置失败');
     }
   }
 };
@@ -524,6 +636,46 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString('zh-CN');
 };
 
+// 机器人相关辅助方法
+const getRobotNameById = (robotId: number) => {
+  const robot = robots.value.find(r => r.id === robotId);
+  return robot?.name || '';
+};
+
+const getRobotTypeLabel = (robotType: string) => {
+  const typeMap: Record<string, string> = {
+    'wechat': '企业微信',
+    'feishu': '飞书',
+    'dingtalk': '钉钉'
+  };
+  return typeMap[robotType] || robotType;
+};
+
+const getRobotTypeTagType = (robotType: string) => {
+  const typeMap: Record<string, string> = {
+    'wechat': 'success',
+    'feishu': 'primary',
+    'dingtalk': 'warning'
+  };
+  return typeMap[robotType] || 'info';
+};
+
+// 批量配置辅助方法
+const selectAllRobotsForBatch = () => {
+  batchForm.robot_ids = robots.value.map(robot => robot.id);
+};
+
+const clearAllRobotsForBatch = () => {
+  batchForm.robot_ids = [];
+};
+
+const removeRobotFromBatch = (robotId: number) => {
+  const index = batchForm.robot_ids.indexOf(robotId);
+  if (index > -1) {
+    batchForm.robot_ids.splice(index, 1);
+  }
+};
+
 // 生命周期
 onMounted(() => {
   fetchInstances();
@@ -584,6 +736,14 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+.robot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+  align-items: center;
 }
 
 .selected-instances {
@@ -673,5 +833,114 @@ onMounted(() => {
 /* 下拉框样式 */
 .el-select {
   width: 100%;
+}
+
+/* 机器人选择区域样式 */
+.robot-selection {
+  width: 100%;
+}
+
+.selection-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.selection-count {
+  font-size: 12px;
+  color: #909399;
+  margin-left: auto;
+}
+
+.robot-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.robot-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-robots,
+.preview-robots {
+  min-height: 32px;
+  padding: 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: #f5f7fa;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.current-robots .text-muted {
+  color: #909399;
+  font-style: italic;
+}
+
+/* Checkbox 组样式 */
+.robot-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.robot-checkbox-group-clean {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+}
+
+.robot-checkbox-item {
+  margin: 0 !important;
+  padding: 8px 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.robot-checkbox-item:hover {
+  border-color: #409eff;
+  background-color: #f0f8ff;
+}
+
+.robot-checkbox-item.is-checked {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.robot-checkbox-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 8px;
+  width: 100%;
+}
+
+.robot-checkbox-content .robot-name {
+  font-weight: 500;
+  color: #303133;
+}
+
+.robot-checkbox-content .robot-type-tag {
+  margin-left: 8px;
 }
 </style>

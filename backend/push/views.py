@@ -367,29 +367,41 @@ class InstanceMappingViewSet(viewsets.ModelViewSet):
     def batch_configure(self, request):
         """批量配置实例映射"""
         instance_ids = request.data.get('instance_ids', [])
-        robot_id = request.data.get('robot_id')
+        robot_ids = request.data.get('robot_ids', [])
         
-        if not instance_ids or not robot_id:
+        if not instance_ids:
             return Response(
-                {'error': '请提供实例ID列表和机器人ID'},
+                {'error': '请提供实例ID列表'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not robot_ids:
+            return Response(
+                {'error': '请提供机器人ID列表'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         try:
-            robot = Robot.objects.get(id=robot_id)
-            instances = InstanceMapping.objects.filter(id__in=instance_ids)
+            # 检查机器人是否存在
+            robots = Robot.objects.filter(id__in=robot_ids)
+            if robots.count() != len(robot_ids):
+                return Response(
+                    {'error': '部分机器人不存在'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
-            updated_count = instances.update(robot=robot)
+            # 获取实例
+            instances = InstanceMapping.objects.filter(id__in=instance_ids)
+            updated_count = 0
+            
+            for instance in instances:
+                instance.robots.set(robot_ids)
+                updated_count += 1
             
             return Response({
                 'message': f'成功配置{updated_count}个实例',
                 'updated_count': updated_count
             })
-        except Robot.DoesNotExist:
-            return Response(
-                {'error': '机器人不存在'},
-                status=status.HTTP_404_NOT_FOUND
-            )
         except Exception as e:
             return Response(
                 {'error': f'批量配置失败: {str(e)}'},
@@ -409,7 +421,11 @@ class InstanceMappingViewSet(viewsets.ModelViewSet):
         
         try:
             instances = InstanceMapping.objects.filter(id__in=instance_ids)
-            updated_count = instances.update(robot=None)
+            updated_count = 0
+            
+            for instance in instances:
+                instance.robots.clear()
+                updated_count += 1
             
             return Response({
                 'message': f'成功清除{updated_count}个实例的配置',
@@ -544,10 +560,12 @@ class DistributionPushView(APIView):
                                 instance_name=instance_name
                             )
                             
-                            # 如果实例有配置的机器人，则推送消息
-                            if instance_mapping.robot:
-                                # 确保模板和机器人类型匹配
-                                if template.robot_type == instance_mapping.robot.robot_type:
+                            # 获取实例配置的所有机器人
+                            robots = instance_mapping.robots.filter(robot_type=template.robot_type)
+                            
+                            if robots.exists():
+                                # 向所有匹配类型的机器人推送消息
+                                for robot in robots:
                                     # 在消息数据中添加实例信息
                                     enhanced_data = content_data.copy()
                                     enhanced_data['instance_name'] = instance_name
@@ -556,7 +574,7 @@ class DistributionPushView(APIView):
                                     # 推送消息
                                     success, error_msg = MessagePushService.push_message(
                                         template=template,
-                                        robot=instance_mapping.robot,
+                                        robot=robot,
                                         data=enhanced_data,
                                         user=template.created_by
                                     )
@@ -565,33 +583,38 @@ class DistributionPushView(APIView):
                                         success_count += 1
                                         results.append({
                                             'instance': instance_name,
-                                            'robot': instance_mapping.robot.name,
+                                            'robot': robot.name,
                                             'status': 'success'
                                         })
                                     else:
                                         error_count += 1
                                         results.append({
                                             'instance': instance_name,
-                                            'robot': instance_mapping.robot.name,
+                                            'robot': robot.name,
                                             'status': 'error',
                                             'error': error_msg
                                         })
+                            else:
+                                # 检查是否有配置机器人但类型不匹配的情况
+                                all_robots = instance_mapping.robots.all()
+                                if all_robots.exists():
+                                    # 有配置机器人但类型不匹配
+                                    for robot in all_robots:
+                                        error_count += 1
+                                        results.append({
+                                            'instance': instance_name,
+                                            'robot': robot.name,
+                                            'status': 'error',
+                                            'error': f'模板类型({template.get_robot_type_display()})与机器人类型({robot.get_robot_type_display()})不匹配'
+                                        })
                                 else:
-                                    error_count += 1
+                                    # 实例没有配置任何机器人，记录但不推送
                                     results.append({
                                         'instance': instance_name,
-                                        'robot': instance_mapping.robot.name,
-                                        'status': 'error',
-                                        'error': f'模板类型({template.get_robot_type_display()})与机器人类型({instance_mapping.robot.get_robot_type_display()})不匹配'
+                                        'robot': None,
+                                        'status': 'skipped',
+                                        'error': '实例未配置机器人'
                                     })
-                            else:
-                                # 实例没有配置机器人，记录但不推送
-                                results.append({
-                                    'instance': instance_name,
-                                    'robot': None,
-                                    'status': 'skipped',
-                                    'error': '实例未配置机器人'
-                                })
                                 
                         except InstanceMapping.DoesNotExist:
                             # 实例映射不存在，记录但不推送
