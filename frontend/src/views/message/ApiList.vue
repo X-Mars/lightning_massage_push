@@ -78,7 +78,7 @@
                       <el-icon><InfoFilled /></el-icon>
                       接口说明
                     </el-button>
-                    <el-dropdown trigger="click" @command="(command) => handleTestCommand(command, scope.row)">
+                    <el-dropdown trigger="click" @command="handleTestCommand">
                       <el-button 
                         type="success" 
                         size="small" 

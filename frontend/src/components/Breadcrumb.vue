@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import type { RouteRecordNormalized } from 'vue-router';
 
 interface BreadcrumbItem {
@@ -20,7 +20,6 @@ interface BreadcrumbItem {
 }
 
 const route = useRoute();
-const router = useRouter();
 
 // 根据当前路由动态生成面包屑
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {

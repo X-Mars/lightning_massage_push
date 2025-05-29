@@ -40,13 +40,37 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: 'interface',
-        name: 'ApiList',
-        component: () => import('../views/message/ApiList.vue'),
+        name: 'Interface',
+        redirect: '/interface/basic',
         meta: {
           title: '消息接口',
           icon: 'Connection',
           showInMenu: true
-        }
+        },
+        children: [
+          {
+            path: 'basic',
+            name: 'BasicApiList',
+            component: () => import('../views/message/BasicApiList.vue'),
+            meta: {
+              title: '基本消息接口',
+              icon: 'ChatDotRound',
+              showInMenu: true,
+              parent: 'Interface'
+            }
+          },
+          {
+            path: 'distribution',
+            name: 'DistributionApiList',
+            component: () => import('../views/message/DistributionApiList.vue'),
+            meta: {
+              title: '高级分发接口',
+              icon: 'Operation',
+              showInMenu: true,
+              parent: 'Interface'
+            }
+          }
+        ]
       },
       {
         path: 'templates',
