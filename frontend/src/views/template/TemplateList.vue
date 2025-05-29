@@ -156,7 +156,7 @@
               <div class="editor-container">
                 <div class="editor-header">
                   <span class="editor-tips">
-                    支持Jinja2语法：变量 <code v-pre>{{ variable }}</code>，循环 <code v-pre>{% for item in items %}...{% endfor %}</code>，条件 <code v-pre>{% if condition %}...{% endif %}</code>
+                    使用Jinja2语法，如: <code v-pre>{{ variable }}</code> 表示变量
                   </span>
                 </div>
                 <el-input 
@@ -235,7 +235,6 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Edit, View, Delete } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { marked } from 'marked';
-import * as nunjucks from 'nunjucks';
 
 // 模板仓库
 const templateStore = useTemplateStore();
@@ -267,7 +266,7 @@ const totalTemplates = ref(0); // 后端分页时的总数
 // 预览相关
 const previewDialogVisible = ref(false);
 const currentPreviewTemplate = ref<Template | null>(null);
-const testData = ref('{\n  "title": "测试标题",\n  "content": "测试内容",\n  "commonLabels": {\n    "alertname": "HighCPUUsage",\n    "instance": "server-01",\n    "severity": "warning",\n    "team": "ops"\n  },\n  "alerts": [\n    {\n      "labels": {\n        "alertname": "HighCPUUsage",\n        "instance": "server-01"\n      },\n      "annotations": {\n        "summary": "高CPU使用率",\n        "description": "CPU使用率超过80%"\n      },\n      "status": "firing"\n    }\n  ]\n}');
+const testData = ref('{\n  "title": "测试标题",\n  "content": "测试内容"\n}');
 const previewResult = ref('');
 
 // 表单相关
@@ -507,100 +506,32 @@ const renderContentByRobotType = (content: string, robotType: RobotType) => {
   }
 };
 
-// 初始化nunjucks环境
-const nunjucksEnv = new nunjucks.Environment(null, {
-  autoescape: false,
-  throwOnUndefined: false // 防止未定义变量导致错误
-});
-
-// 添加自定义过滤器支持字典遍历
-nunjucksEnv.addFilter('items', function(obj) {
-  if (!obj || typeof obj !== 'object') return [];
-  return Object.entries(obj).map(([key, value]) => ({ key, value }));
-});
-
-// 安全的模板渲染函数
-const safeRenderTemplate = (templateContent: string, data: any): string => {
-  try {
-    // 预处理模板，将 .items() 语法转换为 nunjucks 兼容的语法
-    let processedTemplate = templateContent;
-    
-    // 将 {% for key, value in dict.items() %} 转换为 {% for item in dict | items %}{% set key = item.key %}{% set value = item.value %}
-    processedTemplate = processedTemplate.replace(
-      /\{\%\s*for\s+(\w+),\s*(\w+)\s+in\s+(\w+(?:\.\w+)*)\.items\(\)\s*\%\}/g,
-      '{% for item in $3 | items %}{% set $1 = item.key %}{% set $2 = item.value %}'
-    );
-    
-    return nunjucksEnv.renderString(processedTemplate, data);
-  } catch (error) {
-    console.warn('Nunjucks渲染失败:', error);
-    throw error;
-  }
-};
-
-// 防抖函数
-let renderTimeout: number | null = null;
-
 // 实时渲染预览
 const renderLivePreview = () => {
-  // 清除之前的定时器，实现防抖
-  if (renderTimeout) {
-    clearTimeout(renderTimeout);
-  }
-  
-  renderTimeout = setTimeout(() => {
-    try {
-      let data;
-      if (previewDataType.value === 'standard') {
-        // 使用标准示例数据，包含常用的Prometheus告警相关字段
-        data = { 
-          title: "测试标题", 
-          content: "测试内容",
-          time: new Date().toLocaleString(),
-          status: "成功",
-          user: "系统管理员",
-          // 添加commonLabels对象，支持items()遍历
-          commonLabels: {
-            alertname: "HighCPUUsage",
-            instance: "server-01",
-            severity: "warning",
-            team: "ops"
-          },
-          // 添加其他常用字段
-          alerts: [
-            { 
-              labels: { alertname: "HighCPUUsage", instance: "server-01" },
-              annotations: { summary: "高CPU使用率", description: "CPU使用率超过80%" },
-              status: "firing"
-            }
-          ],
-          items: [
-            { name: "项目1", value: "值1" },
-            { name: "项目2", value: "值2" },
-            { name: "项目3", value: "值3" }
-          ]
-        };
-      } else {
-        // 使用自定义数据
-        data = JSON.parse(formTestData.value);
-      }
+  try {
+    let data;
+    if (previewDataType.value === 'standard') {
+      // 使用标准示例数据
+      data = { 
+        title: "测试标题", 
+        content: "测试内容",
+        time: new Date().toLocaleString(),
+        status: "成功",
+        user: "系统管理员"
+      };
+    } else {
+      // 使用自定义数据
+      data = JSON.parse(formTestData.value);
+    }
     
     // 生成预览结果
     if (form.content && form.robot_type) {
-      let previewContent = '';
-      
-      try {
-        // 使用安全的模板渲染函数
-        previewContent = safeRenderTemplate(form.content, data);
-      } catch (templateError) {
-        // 如果模板渲染失败，回退到简单的变量替换
-        console.warn('模板渲染失败，回退到简单变量替换:', templateError);
-        previewContent = form.content;
-        Object.keys(data).forEach(key => {
-          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-          previewContent = previewContent.replace(regex, data[key]);
-        });
-      }
+      let previewContent = form.content;
+      // 替换模板中的变量
+      Object.keys(data).forEach(key => {
+        const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+        previewContent = previewContent.replace(regex, data[key]);
+      });
       
       // 根据机器人类型渲染内容
       const renderedContent = renderContentByRobotType(previewContent, form.robot_type);
@@ -612,10 +543,8 @@ const renderLivePreview = () => {
       formPreviewResult.value = '<div class="preview-empty">请输入模板内容和选择机器人类型</div>';
     }
   } catch (error) {
-    console.error('预览渲染错误:', error);
     formPreviewResult.value = '<div class="preview-error">数据格式错误，请检查JSON格式</div>';
   }
-  }, 300); // 300ms 防抖延迟
 };
 
 // 实时预览文档已经处理了预览逻辑，不再需要额外的预览函数
@@ -633,22 +562,14 @@ const renderPreview = () => {
     const data = JSON.parse(testData.value);
     
     // 获取模板内容并处理变量替换
-    let previewContent = '';
+    let previewContent = currentPreviewTemplate.value?.content || '';
     const robotType = currentPreviewTemplate.value?.robot_type || RobotType.WECHAT;
-    const templateContent = currentPreviewTemplate.value?.content || '';
     
-    try {
-      // 使用安全的模板渲染函数
-      previewContent = safeRenderTemplate(templateContent, data);
-    } catch (templateError) {
-      // 如果模板渲染失败，回退到简单的变量替换
-      console.warn('模板渲染失败，回退到简单变量替换:', templateError);
-      previewContent = templateContent;
-      Object.keys(data).forEach(key => {
-        const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-        previewContent = previewContent.replace(regex, data[key]);
-      });
-    }
+    // 替换所有变量
+    Object.keys(data).forEach(key => {
+      const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+      previewContent = previewContent.replace(regex, data[key]);
+    });
     
     // 根据机器人类型渲染内容
     const renderedContent = renderContentByRobotType(previewContent, robotType);
