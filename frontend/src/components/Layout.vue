@@ -1,14 +1,17 @@
 <template>
   <div class="common-layout">
+    <!-- 环境标签 -->
+    <EnvTag />
+    
     <el-container class="layout-container">
       <el-aside :width="isCollapse ? '64px' : '220px'" class="aside">
         <div class="logo-container">
           <h2 class="logo-text" v-show="!isCollapse">
-            <img src="../assets/eagle.svg" alt="老鹰" class="mascot-image"/>
+            <img src="../assets/lightning.svg" alt="闪电" class="mascot-image" />
             <span class="logo-title">闪电推送</span>
           </h2>
           <h2 class="logo-icon" v-show="isCollapse">
-            <img src="../assets/eagle.svg" alt="老鹰" class="mascot-image-2"/>
+            <img src="../assets/lightning.svg" alt="闪电" class="mascot-image-2" />
           </h2>
         </div>
         <el-menu
@@ -28,7 +31,7 @@
               </el-icon>
               <span>{{ item.title }}</span>
             </el-menu-item>
-            
+
             <!-- 有子菜单的菜单项 -->
             <el-sub-menu v-else :index="item.path">
               <template #title>
@@ -37,11 +40,7 @@
                 </el-icon>
                 <span>{{ item.title }}</span>
               </template>
-              <el-menu-item 
-                v-for="child in item.children" 
-                :key="child.path" 
-                :index="child.path"
-              >
+              <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
                 <el-icon>
                   <component :is="child.icon" />
                 </el-icon>
@@ -51,7 +50,7 @@
           </template>
         </el-menu>
       </el-aside>
-      
+
       <el-container>
         <el-header class="header">
           <div class="header-left">
@@ -65,7 +64,7 @@
           <div class="header-right">
             <el-dropdown @command="handleCommand">
               <span class="user-info">
-                <el-avatar :size="32" icon="UserFilled" />
+                <img src="../assets/lightning.svg" alt="用户头像" class="user-avatar" />
                 <span class="username">{{ username }}</span>
                 <el-icon><ArrowDown /></el-icon>
               </span>
@@ -77,7 +76,7 @@
             </el-dropdown>
           </div>
         </el-header>
-        
+
         <el-main class="main-content">
           <router-view v-slot="{ Component }">
             <transition name="fade" mode="out-in">
@@ -98,6 +97,7 @@ import { ArrowDown } from '@element-plus/icons-vue';
 import { ElMessageBox } from 'element-plus';
 import { menuItems } from '../config/menu';
 import Breadcrumb from './BreadcrumbWrapper';
+import EnvTag from './EnvTag.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -118,10 +118,12 @@ const handleCommand = (command: string) => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
-    }).then(() => {
-      authStore.logout();
-      router.push('/login');
-    }).catch(() => {});
+    })
+      .then(() => {
+        authStore.logout();
+        router.push('/login');
+      })
+      .catch(() => {});
   }
 };
 </script>
@@ -207,7 +209,8 @@ const handleCommand = (command: string) => {
   height: 64px;
 }
 
-.header-left, .header-right {
+.header-left,
+.header-right {
   display: flex;
   align-items: center;
 }
@@ -251,5 +254,14 @@ const handleCommand = (command: string) => {
   height: 55px;
   object-fit: contain;
   vertical-align: middle;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  padding: 4px;
 }
 </style>

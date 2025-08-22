@@ -9,7 +9,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm">
@@ -17,13 +17,23 @@
             <el-input v-model="searchForm.alertName" placeholder="输入告警名称搜索" clearable />
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态" style="width: 150px" clearable>
+            <el-select
+              v-model="searchForm.status"
+              placeholder="请选择状态"
+              style="width: 150px"
+              clearable
+            >
               <el-option label="活跃" value="firing" />
               <el-option label="已解决" value="resolved" />
             </el-select>
           </el-form-item>
           <el-form-item label="严重程度">
-            <el-select v-model="searchForm.severity" placeholder="请选择严重程度" style="width: 150px" clearable>
+            <el-select
+              v-model="searchForm.severity"
+              placeholder="请选择严重程度"
+              style="width: 150px"
+              clearable
+            >
               <el-option label="严重" value="critical" />
               <el-option label="警告" value="warning" />
               <el-option label="信息" value="info" />
@@ -35,15 +45,9 @@
           </el-form-item>
         </el-form>
       </div>
-      
+
       <!-- 表格区域 -->
-      <el-table 
-        v-loading="loading" 
-        :data="alertData" 
-        style="width: 100%" 
-        border
-        row-key="id"
-      >
+      <el-table v-loading="loading" :data="alertData" style="width: 100%" border row-key="id">
         <el-table-column prop="alertname" label="告警名称" min-width="200" />
         <el-table-column prop="instance" label="实例" width="150" />
         <el-table-column prop="severity" label="严重程度" width="120">
@@ -71,7 +75,7 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
@@ -85,17 +89,17 @@
         />
       </div>
     </el-card>
-    
+
     <!-- 告警详情对话框 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="告警详情"
-      width="70%"
-    >
+    <el-dialog v-model="detailDialogVisible" title="告警详情" width="70%">
       <div v-if="currentAlert" class="alert-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="告警名称" label-align="right">{{ currentAlert.alertname }}</el-descriptions-item>
-          <el-descriptions-item label="实例" label-align="right">{{ currentAlert.instance }}</el-descriptions-item>
+          <el-descriptions-item label="告警名称" label-align="right">{{
+            currentAlert.alertname
+          }}</el-descriptions-item>
+          <el-descriptions-item label="实例" label-align="right">{{
+            currentAlert.instance
+          }}</el-descriptions-item>
           <el-descriptions-item label="严重程度" label-align="right">
             <el-tag :type="getSeverityTagType(currentAlert.severity)">
               {{ getSeverityText(currentAlert.severity) }}
@@ -106,19 +110,23 @@
               {{ currentAlert.status === 'firing' ? '活跃' : '已解决' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="开始时间" label-align="right">{{ currentAlert.startTime }}</el-descriptions-item>
-          <el-descriptions-item label="结束时间" label-align="right">{{ currentAlert.endTime || '仍在进行' }}</el-descriptions-item>
-          <el-descriptions-item label="摘要" label-align="right" :span="2">{{ currentAlert.summary }}</el-descriptions-item>
-          <el-descriptions-item label="描述" label-align="right" :span="2">{{ currentAlert.description }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间" label-align="right">{{
+            currentAlert.startTime
+          }}</el-descriptions-item>
+          <el-descriptions-item label="结束时间" label-align="right">{{
+            currentAlert.endTime || '仍在进行'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="摘要" label-align="right" :span="2">{{
+            currentAlert.summary
+          }}</el-descriptions-item>
+          <el-descriptions-item label="描述" label-align="right" :span="2">{{
+            currentAlert.description
+          }}</el-descriptions-item>
         </el-descriptions>
-        
+
         <div v-if="currentAlert.labels" class="alert-labels">
           <h4>标签</h4>
-          <el-tag 
-            v-for="(value, key) in currentAlert.labels" 
-            :key="key" 
-            class="label-tag"
-          >
+          <el-tag v-for="(value, key) in currentAlert.labels" :key="key" class="label-tag">
             {{ key }}: {{ value }}
           </el-tag>
         </div>
@@ -155,14 +163,14 @@ const currentAlert = ref<Alert | null>(null);
 const searchForm = reactive({
   alertName: '',
   status: '',
-  severity: ''
+  severity: '',
 });
 
 // 分页
 const pagination = reactive({
   currentPage: 1,
   pageSize: 20,
-  total: 0
+  total: 0,
 });
 
 // 模拟告警数据
@@ -177,10 +185,10 @@ const alertData = ref<Alert[]>([
     summary: 'CPU使用率超过90%',
     description: '服务器CPU使用率持续超过90%，可能影响系统性能',
     labels: {
-      'instance': 'web-server-01',
-      'job': 'node-exporter',
-      'severity': 'critical'
-    }
+      instance: 'web-server-01',
+      job: 'node-exporter',
+      severity: 'critical',
+    },
   },
   {
     id: '2',
@@ -192,10 +200,10 @@ const alertData = ref<Alert[]>([
     summary: '磁盘空间不足',
     description: '磁盘空间使用率超过85%，建议清理或扩容',
     labels: {
-      'instance': 'db-server-01',
-      'job': 'node-exporter',
-      'severity': 'warning'
-    }
+      instance: 'db-server-01',
+      job: 'node-exporter',
+      severity: 'warning',
+    },
   },
   {
     id: '3',
@@ -208,11 +216,11 @@ const alertData = ref<Alert[]>([
     summary: '服务不可用',
     description: 'API服务无法正常响应请求',
     labels: {
-      'instance': 'api-server-02',
-      'job': 'api-monitor',
-      'severity': 'critical'
-    }
-  }
+      instance: 'api-server-02',
+      job: 'api-monitor',
+      severity: 'critical',
+    },
+  },
 ]);
 
 // 获取严重程度标签类型

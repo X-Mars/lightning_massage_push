@@ -9,7 +9,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm">
@@ -17,7 +17,12 @@
             <el-input v-model="searchForm.name" placeholder="输入名称搜索" clearable />
           </el-form-item>
           <el-form-item label="机器人类型">
-            <el-select v-model="searchForm.robot_type" placeholder="请选择" style="width: 200px" clearable>
+            <el-select
+              v-model="searchForm.robot_type"
+              placeholder="请选择"
+              style="width: 200px"
+              clearable
+            >
               <el-option
                 v-for="(name, type) in RobotTypeNames"
                 :key="type"
@@ -32,15 +37,9 @@
           </el-form-item>
         </el-form>
       </div>
-      
+
       <!-- 表格区域 -->
-      <el-table 
-        v-loading="loading" 
-        :data="filteredRobots" 
-        style="width: 100%" 
-        border
-        row-key="id"
-      >
+      <el-table v-loading="loading" :data="filteredRobots" style="width: 100%" border row-key="id">
         <el-table-column prop="name" label="机器人名称" />
         <el-table-column prop="english_name" label="英文名称" />
         <el-table-column prop="robot_type" label="机器人类型">
@@ -52,7 +51,7 @@
         </el-table-column>
         <el-table-column prop="is_default" label="默认机器人" width="120">
           <template #default="scope">
-            <el-switch 
+            <el-switch
               v-model="scope.row.is_default"
               active-text="是"
               inactive-text="否"
@@ -65,7 +64,7 @@
         <el-table-column prop="webhook_url" label="Webhook地址 (点击复制)" min-width="250px">
           <template #default="scope">
             <div class="webhook-url">
-              <div 
+              <div
                 class="webhook-url-text"
                 @click="copyWebhook(scope.row.webhook_url)"
                 title="点击复制 Webhook 地址"
@@ -75,7 +74,11 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="updated_at" label="更新时间" width="180" />
+        <el-table-column prop="updated_at" label="更新时间" width="180">
+          <template #default="scope">
+            {{ formatToLocalTime(scope.row.updated_at) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" @click="handleEditRobot(scope.row)">
@@ -90,7 +93,7 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页区域 -->
       <div class="pagination-container">
         <el-pagination
@@ -104,15 +107,13 @@
         />
       </div>
     </el-card>
-    
+
     <!-- 测试机器人对话框 -->
-    <el-dialog
-      v-model="testDialogVisible"
-      title="测试机器人"
-      width="500px"
-    >
+    <el-dialog v-model="testDialogVisible" title="测试机器人" width="500px">
       <div class="test-container">
-        <p>向 <b>{{ currentRobot?.name }}</b> 发送测试消息</p>
+        <p>
+          向 <b>{{ currentRobot?.name }}</b> 发送测试消息
+        </p>
         <el-form :model="testForm" label-position="top">
           <el-form-item label="测试消息内容">
             <el-input
@@ -133,7 +134,7 @@
         </span>
       </template>
     </el-dialog>
-    
+
     <!-- 创建/编辑机器人对话框 -->
     <el-dialog
       v-model="formDialogVisible"
@@ -142,7 +143,7 @@
       :before-close="handleDialogClose"
       destroy-on-close
     >
-      <el-form 
+      <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
@@ -152,12 +153,20 @@
         <el-row :gutter="20">
           <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
             <el-form-item label="机器人名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入机器人名称" @input="handleNameInput" />
+              <el-input
+                v-model="form.name"
+                placeholder="请输入机器人名称"
+                @input="handleNameInput"
+              />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
             <el-form-item label="机器人类型" prop="robot_type">
-              <el-select v-model="form.robot_type" placeholder="请选择机器人类型" style="width: 100%">
+              <el-select
+                v-model="form.robot_type"
+                placeholder="请选择机器人类型"
+                style="width: 100%"
+              >
                 <el-option
                   v-for="(name, type) in RobotTypeNames"
                   :key="type"
@@ -168,14 +177,14 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
             <el-form-item label="英文名称" prop="english_name">
-              <el-input 
-                v-model="form.english_name" 
+              <el-input
+                v-model="form.english_name"
                 placeholder="请输入英文名称（可选）"
-                @input="() => userEditedEnglishName = true"
+                @input="() => (userEditedEnglishName = true)"
               >
               </el-input>
             </el-form-item>
@@ -186,7 +195,7 @@
             </div>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="Webhook地址" prop="webhook_url">
@@ -201,9 +210,11 @@
           </el-col>
         </el-row>
       </el-form>
-      
+
       <div v-if="form.robot_type" class="help-section">
-        <h4><el-icon><InfoFilled /></el-icon> {{ RobotTypeNames[form.robot_type] }}机器人配置说明</h4>
+        <h4>
+          <el-icon><InfoFilled /></el-icon> {{ RobotTypeNames[form.robot_type] }}机器人配置说明
+        </h4>
         <div v-if="form.robot_type === 'wechat'" class="help-content">
           <p><b>企业微信机器人配置步骤：</b></p>
           <ol>
@@ -214,7 +225,13 @@
             <li>设置机器人名称并保存</li>
             <li>复制生成的Webhook地址</li>
           </ol>
-          <p>详细说明请参考：<a href="https://developer.work.weixin.qq.com/document/path/91770" target="_blank">企业微信机器人官方文档</a></p>
+          <p>
+            详细说明请参考：<a
+              href="https://developer.work.weixin.qq.com/document/path/91770"
+              target="_blank"
+              >企业微信机器人官方文档</a
+            >
+          </p>
         </div>
         <div v-else-if="form.robot_type === 'feishu'" class="help-content">
           <p><b>飞书机器人配置步骤：</b></p>
@@ -226,7 +243,13 @@
             <li>设置机器人名称、头像、描述等信息</li>
             <li>复制生成的Webhook地址</li>
           </ol>
-          <p>详细说明请参考：<a href="https://www.feishu.cn/hc/zh-CN/articles/360024984973" target="_blank">飞书机器人官方文档</a></p>
+          <p>
+            详细说明请参考：<a
+              href="https://www.feishu.cn/hc/zh-CN/articles/360024984973"
+              target="_blank"
+              >飞书机器人官方文档</a
+            >
+          </p>
         </div>
         <div v-else-if="form.robot_type === 'dingtalk'" class="help-content">
           <p><b>钉钉机器人配置步骤：</b></p>
@@ -239,10 +262,16 @@
             <li>设置机器人名称、头像、安全设置等信息</li>
             <li>复制生成的Webhook地址</li>
           </ol>
-          <p>详细说明请参考：<a href="https://open.dingtalk.com/document/robots/custom-robot-access" target="_blank">钉钉机器人官方文档</a></p>
+          <p>
+            详细说明请参考：<a
+              href="https://open.dingtalk.com/document/robots/custom-robot-access"
+              target="_blank"
+              >钉钉机器人官方文档</a
+            >
+          </p>
         </div>
       </div>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="handleDialogClose">取消</el-button>
@@ -258,15 +287,16 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRobotStore } from '../../stores/robot';
-import { RobotType, RobotTypeNames } from '../../types/index';
+import { RobotType, RobotTypeEnum, RobotTypeNames } from '../../types/index';
 import type { Robot } from '../../types/index';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Edit, Delete, ChatRound, QuestionFilled, InfoFilled } from '@element-plus/icons-vue';
 import { pushApi } from '../../api';
 import useClipboard from 'vue-clipboard3';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules, FormItemRule } from 'element-plus';
 import { toPinyin, hasChinese } from '../../utils/pinyin';
 import { handleApiError } from '../../utils/errorHandler';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 初始化剪贴板
 const { toClipboard } = useClipboard();
@@ -281,7 +311,7 @@ const robots = computed(() => robotStore.robots);
 // 搜索表单
 const searchForm = reactive({
   name: '',
-  robot_type: ''
+  robot_type: '',
 });
 
 // 正在更新默认状态的机器人ID
@@ -300,20 +330,20 @@ const form = reactive({
   english_name: '',
   webhook_url: '',
   robot_type: '' as RobotType,
-  is_default: false
+  is_default: false,
 });
 
 // URL验证函数
-const validateUrl = (_rule: any, value: string, callback: any) => {
+const validateUrl: FormItemRule['validator'] = (_rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入Webhook地址'));
     return;
   }
-  
+
   try {
     new URL(value);
     callback();
-  } catch (error) {
+  } catch (_error) {
     callback(new Error('请输入有效的URL地址'));
   }
 };
@@ -324,14 +354,15 @@ const rules = reactive<FormRules>({
   robot_type: [{ required: true, message: '请选择机器人类型', trigger: 'change' }],
   webhook_url: [
     { required: true, message: '请输入Webhook地址', trigger: 'blur' },
-    { validator: validateUrl, trigger: 'blur' }
-  ]
+    { validator: validateUrl, trigger: 'blur' },
+  ],
 });
 
 // 过滤后的机器人
 const filteredRobots = computed(() => {
   return robots.value.filter(robot => {
-    const nameMatch = !searchForm.name || robot.name.toLowerCase().includes(searchForm.name.toLowerCase());
+    const nameMatch =
+      !searchForm.name || robot.name.toLowerCase().includes(searchForm.name.toLowerCase());
     const typeMatch = !searchForm.robot_type || robot.robot_type === searchForm.robot_type;
     return nameMatch && typeMatch;
   });
@@ -346,18 +377,18 @@ const totalRobots = ref(0); // 后端分页时的总数
 const testDialogVisible = ref(false);
 const currentRobot = ref<Robot | null>(null);
 const testForm = reactive({
-  message: '这是一条测试消息，来自消息推送系统。'
+  message: '这是一条测试消息，来自消息推送系统。',
 });
 const testLoading = ref(false);
 
 // 获取机器人类型标签样式
 const getRobotTypeTagType = (type: RobotType) => {
   switch (type) {
-    case RobotType.WECHAT:
+    case RobotTypeEnum.WECHAT:
       return 'success';
-    case RobotType.FEISHU:
+    case RobotTypeEnum.FEISHU:
       return 'primary';
-    case RobotType.DINGTALK:
+    case RobotTypeEnum.DINGTALK:
       return 'warning';
     default:
       return 'info';
@@ -398,7 +429,7 @@ const handleCurrentChange = (val: number) => {
 const fetchRobotData = async () => {
   const params = {
     page: currentPage.value,
-    page_size: pageSize.value
+    page_size: pageSize.value,
   };
   const result = await robotStore.fetchRobots(params);
   if (result && result.total) {
@@ -419,14 +450,14 @@ const handleEditRobot = (robot: Robot) => {
   resetForm();
   isEdit.value = true;
   currentEditId.value = robot.id;
-  
+
   // 填充表单
   form.name = robot.name;
   form.english_name = robot.english_name || '';
   form.webhook_url = robot.webhook_url;
   form.robot_type = robot.robot_type;
   form.is_default = robot.is_default || false;
-  
+
   formDialogVisible.value = true;
 };
 
@@ -450,7 +481,7 @@ const handleDialogClose = () => {
     {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
     }
   )
     .then(() => {
@@ -464,14 +495,14 @@ const handleDialogClose = () => {
 // 提交表单
 const handleFormSubmit = async () => {
   if (!formRef.value) return;
-  
+
   try {
     const valid = await formRef.value.validate();
     if (valid) {
       formLoading.value = true;
       try {
         let result;
-        
+
         if (isEdit.value && currentEditId.value) {
           // 更新机器人
           result = await robotStore.updateRobot(currentEditId.value, {
@@ -479,9 +510,9 @@ const handleFormSubmit = async () => {
             english_name: form.english_name,
             webhook_url: form.webhook_url,
             robot_type: form.robot_type,
-            is_default: form.is_default
+            is_default: form.is_default,
           });
-          
+
           // 检查是否有错误
           if (result && !result.error) {
             formDialogVisible.value = false;
@@ -496,9 +527,9 @@ const handleFormSubmit = async () => {
             english_name: form.english_name,
             webhook_url: form.webhook_url,
             robot_type: form.robot_type,
-            is_default: form.is_default
+            is_default: form.is_default,
           });
-          
+
           // 检查是否有错误
           if (result && !result.error) {
             formDialogVisible.value = false;
@@ -507,7 +538,7 @@ const handleFormSubmit = async () => {
             handleFieldErrors(result.fieldErrors);
           }
         }
-      } catch (error: any) {
+  } catch (error: unknown) {
         // 使用全局错误处理
         handleApiError(error, '操作失败，请重试');
       } finally {
@@ -520,20 +551,22 @@ const handleFormSubmit = async () => {
 };
 
 // 处理服务器返回的字段错误
-const handleFieldErrors = (fieldErrors: any) => {
+const handleFieldErrors = (fieldErrors: unknown) => {
   if (!fieldErrors) return;
-  
+
   // 处理英文名称错误
-  if (fieldErrors.english_name) {
-    const errorMsg = Array.isArray(fieldErrors.english_name) 
-      ? fieldErrors.english_name.join(', ') 
-      : String(fieldErrors.english_name);
-    
+  const fe = fieldErrors as Record<string, unknown>;
+  if ('english_name' in fe) {
+    const englishErr = fe.english_name as unknown;
+    const errorMsg = Array.isArray(englishErr)
+      ? (englishErr as unknown[]).join(', ')
+      : String(englishErr);
+
     ElMessage.error(`英文名称: ${errorMsg}`);
-    
+
     // 直接显示错误消息而不是修改规则
     // 这可能会导致验证规则类型错误
-    
+
     // 重新验证该字段
     if (formRef.value) {
       // 使用setTimeout是为了确保验证规则更新后再验证
@@ -542,7 +575,7 @@ const handleFieldErrors = (fieldErrors: any) => {
       });
     }
   }
-  
+
   // 处理其他字段错误...
 };
 
@@ -555,28 +588,26 @@ const handleTestRobot = (robot: Robot) => {
 // 发送测试消息
 const sendTestMessage = async () => {
   if (!currentRobot.value) return;
-  
+
   testLoading.value = true;
-  
+
   try {
     // 准备测试数据
     const testData = {
       title: '测试消息',
-      content: testForm.message
+      content: testForm.message,
     };
-    
+
     // 调用后端推送接口
     await pushApi.push({
+      template_id: 0, // 测试消息无模板，占位符
       robot_id: currentRobot.value.id,
-      content: testData,
-      direct_content: testForm.message, // 直接发送的内容
-      test_mode: true // 标记为测试模式
+      content: testData as Record<string, unknown>,
     });
-    
+
     ElMessage.success('测试消息发送成功');
     testDialogVisible.value = false;
-    
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('发送测试消息失败:', error);
     // 使用全局错误处理
     handleApiError(error, '发送测试消息失败，请检查webhook地址是否正确');
@@ -590,8 +621,8 @@ const copyWebhook = async (url: string) => {
   try {
     await toClipboard(url);
     ElMessage.success('Webhook地址已复制到剪贴板');
-  } catch (e) {
-    console.error('复制失败', e);
+  } catch (_e) {
+    console.error('复制失败', _e);
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -600,21 +631,21 @@ const copyWebhook = async (url: string) => {
 const handleDefaultChange = async (robot: Robot) => {
   // 保存旧值，以便发生错误时恢复
   const oldValue = !robot.is_default;
-  
+
   // 标记为正在更新
   updatingDefaultId.value = robot.id;
-  
+
   try {
     // 调用API更新机器人
     await robotStore.updateRobot(robot.id, {
-      is_default: robot.is_default
+      is_default: robot.is_default,
     });
-      // 重新获取机器人列表以确保数据一致性
-      await fetchRobotData();
-  } catch (error) {
+    // 重新获取机器人列表以确保数据一致性
+    await fetchRobotData();
+  } catch (_error) {
     // 恢复旧值
     robot.is_default = oldValue;
-    handleApiError(error, '设置默认机器人失败');
+    handleApiError(_error, '设置默认机器人失败');
   } finally {
     // 取消标记
     updatingDefaultId.value = null;
@@ -623,15 +654,11 @@ const handleDefaultChange = async (robot: Robot) => {
 
 // 删除机器人
 const handleDeleteRobot = (robot: Robot) => {
-  ElMessageBox.confirm(
-    `确定要删除机器人"${robot.name}"吗？删除后不可恢复。`,
-    '删除确认',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
+  ElMessageBox.confirm(`确定要删除机器人"${robot.name}"吗？删除后不可恢复。`, '删除确认', {
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
     .then(async () => {
       const success = await robotStore.deleteRobot(robot.id);
       if (success) {
@@ -664,15 +691,20 @@ const handleNameInput = (value: string) => {
 const userEditedEnglishName = ref(false);
 
 // 监听英文名称的变化，检测是否为用户手动编辑
-watch(() => form.english_name, (newVal, oldVal) => {
-  // 如果英文名称发生变化，且不是自动转换或直接填充引起的变化
-  if (newVal !== oldVal && 
-      newVal !== toPinyin(form.name) && 
-      newVal !== form.name.replace(/\s+/g, '')) {
-    // 标记为用户手动编辑过
-    userEditedEnglishName.value = true;
+watch(
+  () => form.english_name,
+  (newVal, oldVal) => {
+    // 如果英文名称发生变化，且不是自动转换或直接填充引起的变化
+    if (
+      newVal !== oldVal &&
+      newVal !== toPinyin(form.name) &&
+      newVal !== form.name.replace(/\s+/g, '')
+    ) {
+      // 标记为用户手动编辑过
+      userEditedEnglishName.value = true;
+    }
   }
-});
+);
 
 // 重置表单时，也要重置用户编辑标记
 const originalResetForm = resetForm;
@@ -742,8 +774,8 @@ onMounted(async () => {
 .webhook-url-text:hover {
   background-color: #e6f1fc;
   text-decoration: underline;
-  border-color: #409EFF;
-  color: #409EFF;
+  border-color: #409eff;
+  color: #409eff;
 }
 
 .test-container {
@@ -755,12 +787,12 @@ onMounted(async () => {
   padding: 15px;
   background-color: #f7f9fc;
   border-radius: 4px;
-  border-left: 4px solid #409EFF;
+  border-left: 4px solid #409eff;
 }
 
 .help-section h4 {
   margin-top: 0;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .help-content {
@@ -773,7 +805,7 @@ onMounted(async () => {
 }
 
 .help-content a {
-  color: #409EFF;
+  color: #409eff;
   text-decoration: none;
 }
 
@@ -809,6 +841,6 @@ onMounted(async () => {
 }
 
 .tooltip-icon:hover {
-  color: #409EFF;
+  color: #409eff;
 }
 </style>

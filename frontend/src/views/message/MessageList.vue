@@ -6,7 +6,7 @@
           <h3>消息发送日志</h3>
         </div>
       </template>
-      
+
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm">
@@ -17,7 +17,12 @@
             <el-input v-model="searchForm.robot" placeholder="输入机器人名称搜索" clearable />
           </el-form-item>
           <el-form-item label="发送状态">
-            <el-select v-model="searchForm.status" placeholder="请选择" style="width: 200px" clearable>
+            <el-select
+              v-model="searchForm.status"
+              placeholder="请选择"
+              style="width: 200px"
+              clearable
+            >
               <el-option label="成功" :value="true" />
               <el-option label="失败" :value="false" />
             </el-select>
@@ -38,15 +43,9 @@
           </el-form-item>
         </el-form>
       </div>
-      
+
       <!-- 表格区域 -->
-      <el-table 
-        v-loading="loading" 
-        :data="messageList" 
-        style="width: 100%" 
-        border
-        row-key="id"
-      >
+      <el-table v-loading="loading" :data="messageList" style="width: 100%" border row-key="id">
         <el-table-column prop="template_name" label="模板名称" />
         <el-table-column prop="robot_name" label="机器人" />
         <el-table-column prop="created_by_username" label="发送用户" />
@@ -57,7 +56,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="发送时间" width="180" sortable />
+        <el-table-column prop="created_at" label="发送时间" width="180" sortable>
+          <template #default="scope">
+            {{ formatToLocalTime(scope.row.created_at) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
             <el-button type="primary" link @click="handleViewDetail(scope.row)">
@@ -66,7 +69,7 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页区域 -->
       <div class="pagination-container">
         <el-pagination
@@ -80,32 +83,40 @@
         />
       </div>
     </el-card>
-    
+
     <!-- 消息详情对话框 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="消息详情"
-      width="70%"
-    >
+    <el-dialog v-model="detailDialogVisible" title="消息详情" width="70%">
       <div v-if="currentMessage" class="message-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="模板名称" label-align="right">{{ currentMessage.template_name }}</el-descriptions-item>
-          <el-descriptions-item label="机器人名称" label-align="right">{{ currentMessage.robot_name }}</el-descriptions-item>
-          <el-descriptions-item label="发送时间" label-align="right">{{ currentMessage.created_at }}</el-descriptions-item>
+          <el-descriptions-item label="模板名称" label-align="right">{{
+            currentMessage.template_name
+          }}</el-descriptions-item>
+          <el-descriptions-item label="机器人名称" label-align="right">{{
+            currentMessage.robot_name
+          }}</el-descriptions-item>
+          <el-descriptions-item label="发送时间" label-align="right">
+            {{ formatToLocalTime(currentMessage.created_at) }}
+          </el-descriptions-item>
           <el-descriptions-item label="发送状态" label-align="right">
             <el-tag :type="currentMessage.status ? 'success' : 'danger'">
               {{ currentMessage.status ? '成功' : '失败' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="发送用户" label-align="right">{{ currentMessage.created_by_username }}</el-descriptions-item>
-          <el-descriptions-item label="错误信息" label-align="right" v-if="!currentMessage.status && currentMessage.error_message">
+          <el-descriptions-item label="发送用户" label-align="right">{{
+            currentMessage.created_by_username
+          }}</el-descriptions-item>
+          <el-descriptions-item
+            label="错误信息"
+            label-align="right"
+            v-if="!currentMessage.status && currentMessage.error_message"
+          >
             <span class="error-message">{{ currentMessage.error_message }}</span>
           </el-descriptions-item>
         </el-descriptions>
-        
+
         <el-divider>原始数据</el-divider>
         <pre class="message-data">{{ formatJson(currentMessage.raw_data) }}</pre>
-        
+
         <el-divider>格式化内容</el-divider>
         <div class="formatted-content">
           <div v-html="formatMessageContent(currentMessage.formatted_content)"></div>
@@ -121,6 +132,7 @@ import { useMessageStore } from '../../stores/message';
 import type { MessageLog } from '../../types';
 import { ElMessage } from 'element-plus';
 import { logApi } from '../../api';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 消息仓库
 const messageStore = useMessageStore();
@@ -131,7 +143,7 @@ const messageList = ref<MessageLog[]>([]);
 const pagination = reactive({
   page: 1,
   size: 10,
-  total: 0
+  total: 0,
 });
 
 // 搜索表单
@@ -139,7 +151,7 @@ const searchForm = reactive({
   template: '',
   robot: '',
   status: null as boolean | null,
-  dateRange: [] as string[]
+  dateRange: [] as string[],
 });
 
 // 详情对话框
@@ -183,7 +195,7 @@ const formatJson = (jsonString: string) => {
   try {
     const obj = JSON.parse(jsonString);
     return JSON.stringify(obj, null, 2);
-  } catch (e) {
+  } catch (_e) {
     return jsonString;
   }
 };
@@ -191,7 +203,7 @@ const formatJson = (jsonString: string) => {
 // 格式化消息内容
 const formatMessageContent = (content: string) => {
   if (!content) return '';
-  
+
   // 根据机器人类型，可能需要不同的格式化处理
   // 这里简单处理Markdown格式的内容
   return content
@@ -207,30 +219,38 @@ const formatMessageContent = (content: string) => {
 const fetchMessages = async () => {
   try {
     // 构建查询参数
-    const params: any = {
+    const params: {
+      page: number;
+      size: number;
+      template?: string;
+      robot?: string;
+      status?: boolean;
+      start_date?: string;
+      end_date?: string;
+    } = {
       page: pagination.page,
-      size: pagination.size
+      size: pagination.size,
     };
-    
+
     if (searchForm.template) {
       params.template = searchForm.template;
     }
-    
+
     if (searchForm.robot) {
       params.robot = searchForm.robot;
     }
-    
+
     if (searchForm.status !== null) {
       params.status = searchForm.status;
     }
-    
+
     if (searchForm.dateRange && searchForm.dateRange.length === 2) {
       params.start_date = searchForm.dateRange[0];
       params.end_date = searchForm.dateRange[1];
     }
-    
+
     console.log('准备获取消息列表，参数:', params);
-    
+
     // 直接获取日志数据以便调试
     try {
       const directResponse = await logApi.getLogs(params);
@@ -238,22 +258,22 @@ const fetchMessages = async () => {
     } catch (err) {
       console.error('直接调用API失败:', err);
     }
-    
+
     // 传递构建的参数到 fetchLogs 方法
-    const result = await messageStore.fetchLogs(params.page, params.size, { 
+    const result = await messageStore.fetchLogs(params.page, params.size, {
       template: params.template,
       robot: params.robot,
       status: params.status,
       start_date: params.start_date,
-      end_date: params.end_date
+      end_date: params.end_date,
     });
     console.log('Store方法返回数据:', result);
-    
+
     if (result && Array.isArray(result.results)) {
       messageList.value = result.results;
       pagination.total = result.count || 0;
       console.log('更新后的消息列表:', messageList.value);
-      
+
       if (messageList.value.length === 0) {
         console.warn('API返回了空数组，没有消息记录');
         ElMessage.info('没有找到符合条件的消息记录');
@@ -266,7 +286,7 @@ const fetchMessages = async () => {
       console.warn('API返回数据格式异常或为空');
       messageList.value = [];
     }
-  } catch (error) {
+  } catch (_error) {
     ElMessage.error('获取消息列表失败');
   }
 };
@@ -287,9 +307,9 @@ const mockMessages = () => {
     error_message: i % 5 === 0 ? '推送失败：无法连接到webhook地址' : '',
     created_by: 1,
     created_by_username: 'admin',
-    created_at: new Date(Date.now() - i * 3600000).toLocaleString()
+    created_at: new Date(Date.now() - i * 3600000).toLocaleString(),
   }));
-  
+
   pagination.total = 100; // 模拟总数
 };
 
@@ -297,7 +317,7 @@ const mockMessages = () => {
 onMounted(() => {
   // 尝试获取真实数据，如果失败则使用模拟数据
   console.log('组件挂载，开始获取消息列表');
-  fetchMessages().catch((error) => {
+  fetchMessages().catch(error => {
     console.error('获取消息列表失败，切换到模拟数据:', error);
     // 使用模拟数据作为备用选项
     mockMessages();
@@ -305,16 +325,13 @@ onMounted(() => {
 });
 
 // 监听分页或搜索条件变化
-watch(
-  [() => pagination.page, () => pagination.size],
-  () => {
-    console.log('分页参数改变，重新获取数据');
-    fetchMessages().catch((error) => {
-      console.error('获取消息列表失败，切换到模拟数据:', error);
-      mockMessages();
-    });
-  }
-);
+watch([() => pagination.page, () => pagination.size], () => {
+  console.log('分页参数改变，重新获取数据');
+  fetchMessages().catch(error => {
+    console.error('获取消息列表失败，切换到模拟数据:', error);
+    mockMessages();
+  });
+});
 </script>
 
 <style scoped>

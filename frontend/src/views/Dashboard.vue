@@ -60,7 +60,11 @@
           <el-table :data="recentLogs" stripe style="width: 100%">
             <el-table-column prop="template_name" label="模板名称" width="180"></el-table-column>
             <el-table-column prop="robot_name" label="机器人" width="180"></el-table-column>
-            <el-table-column prop="created_at" label="发送时间" width="160" />
+            <el-table-column prop="created_at" label="发送时间" width="160">
+              <template #default="scope">
+                {{ formatToLocalTime(scope.row.created_at) }}
+              </template>
+            </el-table-column>
             <el-table-column prop="status" label="状态">
               <template #default="scope">
                 <el-tag :type="scope.row.status ? 'success' : 'danger'">
@@ -70,7 +74,9 @@
             </el-table-column>
             <el-table-column width="100" fixed="right">
               <template #default="scope">
-                <el-button type="primary" text size="small" @click="viewLog(scope.row)">查看</el-button>
+                <el-button type="primary" text size="small" @click="viewLog(scope.row)"
+                  >查看</el-button
+                >
               </template>
             </el-table-column>
           </el-table>
@@ -88,6 +94,7 @@ import * as echarts from 'echarts';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import { dashboardApi } from '../api';
 import type { MessageLog } from '../types';
+import { formatToLocalTime } from '../utils/timeFormatter';
 
 const router = useRouter();
 const timeRange = ref('week');
@@ -104,22 +111,22 @@ const statisticsCards = reactive([
     count: 0,
     icon: 'Document',
     bgColor: 'rgba(64, 158, 255, 0.15)',
-    iconColor: '#409EFF'
+    iconColor: '#409EFF',
   },
   {
     title: '机器人总数',
     count: 0,
     icon: 'SetUp',
     bgColor: 'rgba(103, 194, 58, 0.15)',
-    iconColor: '#67C23A'
+    iconColor: '#67C23A',
   },
   {
     title: '本月发送消息',
     count: 0,
     icon: 'ChatDotRound',
     bgColor: 'rgba(230, 162, 60, 0.15)',
-    iconColor: '#E6A23C'
-  }
+    iconColor: '#E6A23C',
+  },
 ]);
 
 // 最近日志数据
@@ -131,55 +138,55 @@ const initCharts = async (forceRefresh = false) => {
     lineChart.dispose();
     lineChart = null;
   }
-  
+
   if (forceRefresh && pieChart) {
     pieChart.dispose();
     pieChart = null;
   }
-  
+
   try {
     // 获取图表数据
     const chartResponse = await dashboardApi.getCharts(timeRange.value);
     const chartData = chartResponse.data;
-    
+
     // 更新线图表
     if (lineChartRef.value) {
       if (!lineChart) {
         lineChart = echarts.init(lineChartRef.value);
       }
-      
+
       const trendData = chartData.trend_data;
       const lineOption = {
         tooltip: {
-          trigger: 'axis'
+          trigger: 'axis',
         },
         legend: {
-          data: ['成功', '失败']
+          data: ['成功', '失败'],
         },
         grid: {
           left: '3%',
           right: '4%',
           bottom: '3%',
-          containLabel: true
+          containLabel: true,
         },
         xAxis: {
           type: 'category',
           boundaryGap: false,
-          data: trendData.categories
+          data: trendData.categories,
         },
         yAxis: {
-          type: 'value'
+          type: 'value',
         },
-        series: trendData.series.map((item: any) => ({
+        series: trendData.series.map((item: { name: string; data: number[] }) => ({
           name: item.name,
           type: 'line',
           stack: 'Total',
           areaStyle: { opacity: 0.3 },
           emphasis: {
-            focus: 'series'
+            focus: 'series',
           },
-          data: item.data
-        }))
+          data: item.data,
+        })),
       };
       lineChart.setOption(lineOption);
     }
@@ -189,17 +196,17 @@ const initCharts = async (forceRefresh = false) => {
       if (!pieChart) {
         pieChart = echarts.init(pieChartRef.value);
       }
-      
+
       const robotTypeData = chartData.robot_type_stats;
       const pieOption = {
         tooltip: {
           trigger: 'item',
-          formatter: '{a} <br/>{b}: {c} ({d}%)'
+          formatter: '{a} <br/>{b}: {c} ({d}%)',
         },
         legend: {
           orient: 'horizontal',
           bottom: 10,
-          data: robotTypeData.map((item: any) => item.name)
+          data: robotTypeData.map((item: { name: string; value: number }) => item.name),
         },
         series: [
           {
@@ -210,30 +217,30 @@ const initCharts = async (forceRefresh = false) => {
             itemStyle: {
               borderRadius: 10,
               borderColor: '#fff',
-              borderWidth: 2
+              borderWidth: 2,
             },
             label: {
               show: false,
-              position: 'center'
+              position: 'center',
             },
             emphasis: {
               label: {
                 show: true,
                 fontSize: '16',
-                fontWeight: 'bold'
-              }
+                fontWeight: 'bold',
+              },
             },
             labelLine: {
-              show: false
+              show: false,
             },
-            data: robotTypeData
-          }
-        ]
+            data: robotTypeData,
+          },
+        ],
       };
       pieChart.setOption(pieOption);
     }
-  } catch (error) {
-    console.error('获取图表数据失败:', error);
+  } catch (_error) {
+    // console.error('获取图表数据失败:', _error);
     ElMessage.error('获取图表数据失败');
   }
 };
@@ -252,7 +259,7 @@ const viewMoreLogs = () => {
 // 查看日志详情
 const viewLog = (log: MessageLog) => {
   ElMessageBox.alert(log.formatted_content, `消息内容 - ${log.template_name}`, {
-    dangerouslyUseHTMLString: true
+    dangerouslyUseHTMLString: true,
   });
 };
 
@@ -269,20 +276,20 @@ const loadDashboardData = async () => {
     // 1. 加载统计数据
     const statsResponse = await dashboardApi.getStats();
     const statsData = statsResponse.data;
-    
+
     // 更新统计卡片数据
     statisticsCards[0].count = statsData.template_count;
     statisticsCards[1].count = statsData.robot_count;
     statisticsCards[2].count = statsData.current_month_messages;
-    
+
     // 2. 加载图表数据
     await initCharts();
-    
+
     // 3. 加载最近日志数据
     const logsResponse = await dashboardApi.getRecentLogs();
     recentLogs.value = logsResponse.data;
-  } catch (error) {
-    console.error('加载仪表盘数据失败:', error);
+  } catch (_error) {
+    // console.error('加载仪表盘数据失败:', _error);
     ElMessage.error('加载仪表盘数据失败');
   } finally {
     loading.value = false;
@@ -292,10 +299,10 @@ const loadDashboardData = async () => {
 onMounted(() => {
   // 加载仪表盘数据
   loadDashboardData();
-  
+
   // 添加窗口大小变化监听
   window.addEventListener('resize', handleResize);
-  
+
   // 在组件卸载前移除事件监听
   return () => {
     window.removeEventListener('resize', handleResize);
@@ -378,7 +385,8 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.chart-header, .log-header {
+.chart-header,
+.log-header {
   display: flex;
   justify-content: space-between;
   align-items: center;

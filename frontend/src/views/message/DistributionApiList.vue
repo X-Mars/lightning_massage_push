@@ -13,10 +13,25 @@
           </div>
         </div>
       </template>
-      
+
       <div v-loading="loading">
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+          <el-button type="primary" size="large" @click="showApiDocs">
+            <el-icon><Document /></el-icon>
+            查看接口文档
+          </el-button>
+          <el-button type="success" size="large" @click="testDistributionApi">
+            <el-icon><Monitor /></el-icon>
+            测试分发接口
+          </el-button>
+          <el-button type="warning" size="large" @click="viewExamples">
+            <el-icon><DataLine /></el-icon>
+            查看示例
+          </el-button>
+        </div>
         <!-- 分发接口说明 -->
-        <el-alert 
+        <!-- <el-alert 
           center
           type="info" 
           title="分发接口说明" 
@@ -32,22 +47,18 @@
               <li>支持自定义分发策略</li>
             </ul>
           </template>
-        </el-alert>
+        </el-alert> -->
 
         <!-- 分发接口信息 -->
         <el-card class="distribution-card" shadow="never">
           <div class="distribution-info">
             <div class="api-header">
               <h4>分发接口地址</h4>
-              <el-button 
-                type="primary" 
-                size="small" 
-                @click="copyDistributionUrl"
-              >
+              <el-button type="primary" size="small" @click="copyDistributionUrl">
                 复制地址
               </el-button>
             </div>
-            
+
             <div class="api-url-display">
               <code class="api-url">{{ distributionApiUrl }}</code>
             </div>
@@ -62,7 +73,8 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="支持格式">
                   <el-tag type="info">Prometheus AlertManager</el-tag>
-                  <el-tag type="info" style="margin-left: 8px;">自定义JSON</el-tag>
+                  <el-tag type="info" style="margin-left: 8px">Zabbix Webhook</el-tag>
+                  <el-tag type="info" style="margin-left: 8px">自定义JSON</el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item label="分发策略">
                   <el-tag type="warning">自动匹配实例</el-tag>
@@ -77,7 +89,7 @@
           <template #header>
             <h4>分发通道统计</h4>
           </template>
-          
+
           <el-row :gutter="20">
             <el-col :span="6">
               <el-statistic title="总分发通道" :value="channelStats.total" />
@@ -99,16 +111,16 @@
           <template #header>
             <div class="card-header">
               <h4>当前分发通道</h4>
-              <el-button 
-                type="primary" 
-                size="small" 
+              <el-button
+                type="primary"
+                size="small"
                 @click="$router.push('/distribution/channels')"
               >
                 管理通道
               </el-button>
             </div>
           </template>
-          
+
           <el-table :data="channels" stripe border>
             <el-table-column prop="name" label="通道名称" min-width="150" />
             <el-table-column prop="robot_name" label="绑定机器人" min-width="150" />
@@ -130,36 +142,15 @@
             <el-table-column prop="description" label="描述" show-overflow-tooltip />
             <el-table-column label="操作" width="100" align="center">
               <template #default="scope">
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  @click="testChannel(scope.row)"
-                  plain
-                >
+                <el-button type="primary" size="small" @click="testChannel(scope.row)" plain>
                   测试
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
-          
+
           <el-empty v-if="channels.length === 0" description="暂无分发通道，请先创建分发通道" />
         </el-card>
-
-        <!-- 操作按钮 -->
-        <div class="action-buttons">
-          <el-button type="primary" size="large" @click="showApiDocs">
-            <el-icon><Document /></el-icon>
-            查看接口文档
-          </el-button>
-          <el-button type="success" size="large" @click="testDistributionApi">
-            <el-icon><Monitor /></el-icon>
-            测试分发接口
-          </el-button>
-          <el-button type="warning" size="large" @click="viewExamples">
-            <el-icon><DataLine /></el-icon>
-            查看示例
-          </el-button>
-        </div>
       </div>
     </el-card>
 
@@ -169,12 +160,17 @@
         <el-tab-pane label="接口说明" name="overview">
           <div class="docs-content">
             <h4>接口概述</h4>
-            <p>高级分发接口是一个智能消息分发系统，支持根据告警数据自动选择合适的分发通道进行消息推送。</p>
-            
+            <p>
+              高级分发接口是一个智能消息分发系统，支持根据告警数据自动选择合适的分发通道进行消息推送。
+            </p>
+
             <h4>主要特性</h4>
             <ul>
               <li><strong>智能路由</strong>: 根据实例名称自动匹配配置的分发通道</li>
-              <li><strong>多格式支持</strong>: 支持Prometheus AlertManager格式和自定义JSON格式</li>
+              <li>
+                <strong>多格式支持</strong>: 支持Prometheus AlertManager、Zabbix
+                Webhook和自定义JSON格式
+              </li>
               <li><strong>批量处理</strong>: 支持一次请求处理多个告警</li>
               <li><strong>自动模板</strong>: 每个分发通道绑定特定的消息模板</li>
               <li><strong>容错机制</strong>: 支持分发失败时的错误处理</li>
@@ -190,36 +186,36 @@
             </el-steps>
           </div>
         </el-tab-pane>
-        
+
         <el-tab-pane label="请求格式" name="request">
           <div class="docs-content">
             <h4>请求地址</h4>
             <pre class="code-block">POST {{ distributionApiUrl }}</pre>
-            
+
             <h4>请求头</h4>
             <pre class="code-block">Content-Type: application/json</pre>
-            
+
             <h4>Prometheus AlertManager 格式</h4>
             <pre class="code-block">{{ prometheusExample }}</pre>
-            
+
             <h4>自定义格式</h4>
             <pre class="code-block">{{ customExample }}</pre>
           </div>
         </el-tab-pane>
-        
+
         <el-tab-pane label="响应格式" name="response">
           <div class="docs-content">
             <h4>成功响应</h4>
             <pre class="code-block">{{ successResponse }}</pre>
-            
+
             <h4>错误响应</h4>
             <pre class="code-block">{{ errorResponse }}</pre>
-            
+
             <h4>部分成功响应</h4>
             <pre class="code-block">{{ partialResponse }}</pre>
           </div>
         </el-tab-pane>
-        
+
         <el-tab-pane label="配置说明" name="config">
           <div class="docs-content">
             <h4>分发通道配置</h4>
@@ -229,7 +225,7 @@
               <li>在实例映射中配置实例与分发通道的关系</li>
               <li>确保分发通道状态为启用</li>
             </ol>
-            
+
             <h4>实例匹配规则</h4>
             <p>系统会根据以下规则匹配实例：</p>
             <ul>
@@ -255,7 +251,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="测试数据">
-          <el-input 
+          <el-input
             v-model="testForm.data"
             type="textarea"
             :rows="12"
@@ -263,7 +259,7 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <div v-if="testResult" class="test-result">
         <h4>测试结果</h4>
         <el-alert
@@ -273,7 +269,7 @@
         />
         <pre class="result-content">{{ testResult.response }}</pre>
       </div>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="showTestDialog = false">取消</el-button>
@@ -286,8 +282,32 @@
     </el-dialog>
 
     <!-- 示例对话框 -->
-    <el-dialog v-model="showExamplesDialog" title="分发接口示例" width="800px">
-      <el-tabs>
+    <el-dialog
+      v-model="showExamplesDialog"
+      title="分发接口示例"
+      width="900px"
+      @open="handleExamplesDialogOpen"
+    >
+      <el-tabs v-model="activeExampleTab">
+        <el-tab-pane label="AlertManager 配置" name="alertmanager">
+          <div class="docs-content">
+            <h4>AlertManager 配置示例</h4>
+            <p>以下是在 Prometheus AlertManager 中配置分发接口的完整示例：</p>
+            <pre class="code-block">{{ alertmanagerConfig }}</pre>
+
+            <h4>告警规则示例</h4>
+            <p>配合使用的 Prometheus 告警规则：</p>
+            <pre class="code-block">{{ prometheusRules }}</pre>
+
+            <h4>配置说明</h4>
+            <ul>
+              <li><strong>webhook_configs</strong>: 配置分发接口的 webhook 地址</li>
+              <li><strong>send_resolved</strong>: 设置为 true 可以发送告警恢复通知</li>
+              <li><strong>http_config</strong>: 可以配置超时、重试等参数</li>
+              <li><strong>route</strong>: 根据告警标签路由到不同的接收器</li>
+            </ul>
+          </div>
+        </el-tab-pane>
         <el-tab-pane label="curl 示例" name="curl">
           <pre class="code-block">{{ curlExample }}</pre>
         </el-tab-pane>
@@ -296,6 +316,46 @@
         </el-tab-pane>
         <el-tab-pane label="JavaScript 示例" name="javascript">
           <pre class="code-block">{{ javascriptExample }}</pre>
+        </el-tab-pane>
+        <el-tab-pane label="Zabbix 配置" name="zabbix">
+          <div class="docs-content">
+            <h4>Zabbix Webhook 配置示例</h4>
+            <p>以下是在 Zabbix 中配置分发接口的完整示例：</p>
+
+            <h4>1. 创建媒体类型</h4>
+            <p>在 Zabbix 管理界面中创建新的媒体类型：</p>
+            <pre class="code-block">{{ zabbixMediaTypeConfig }}</pre>
+
+            <h4>2. 触发器动作配置</h4>
+            <p>配置触发器动作，当告警触发时发送 webhook：</p>
+            <pre class="code-block">{{ zabbixActionConfig }}</pre>
+
+            <h4>3. 数据格式示例</h4>
+            <p>Zabbix 发送到分发接口的数据格式：</p>
+            <pre class="code-block">{{ zabbixDataExample }}</pre>
+
+            <h4>配置说明</h4>
+            <ul>
+              <li><strong>URL</strong>: 设置为分发接口地址</li>
+              <li><strong>HTTP 方法</strong>: 选择 POST</li>
+              <li><strong>内容类型</strong>: 设置为 application/json</li>
+              <li><strong>主机标识</strong>: 使用 {HOST.NAME} 作为实例标识</li>
+              <li><strong>告警映射</strong>: 在系统中配置主机名到分发通道的映射关系</li>
+            </ul>
+
+            <h4>配置步骤</h4>
+            <ol>
+              <li>登录 Zabbix 管理界面</li>
+              <li>进入 管理 → 媒体类型</li>
+              <li>点击 "创建媒体类型"</li>
+              <li>选择类型为 "Webhook"</li>
+              <li>填写名称，如 "MessagePushSystem"</li>
+              <li>设置 URL 为分发接口地址</li>
+              <li>配置参数和消息模板</li>
+              <li>创建动作规则，绑定该媒体类型</li>
+              <li>在用户媒体中添加该媒体类型</li>
+            </ol>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
@@ -317,12 +377,13 @@ const showExamplesDialog = ref(false);
 const testLoading = ref(false);
 const channels = ref<DistributionChannel[]>([]);
 const activeTab = ref('overview');
-const testResult = ref<any>(null);
+const activeExampleTab = ref('alertmanager');
+const testResult = ref<unknown | null>(null);
 
 // 表单数据
 const testForm = reactive({
   format: 'prometheus',
-  data: ''
+  data: '',
 });
 
 // 分发API地址
@@ -336,17 +397,18 @@ const channelStats = computed(() => {
   const total = channels.value.length;
   const active = channels.value.filter(c => c.is_active).length;
   const robotTypes = new Set(channels.value.map(c => c.robot_type)).size;
-  
+
   return {
     total,
     active,
     instances: 0, // 这里可以从实例映射API获取
-    robotTypes
+    robotTypes,
   };
 });
 
-// 示例数据
-const prometheusExample = `{
+// 示例数据 - 使用 computed 确保响应式更新
+const prometheusExample = computed(
+  () => `{
   "alerts": [
     {
       "labels": {
@@ -362,9 +424,11 @@ const prometheusExample = `{
       "startsAt": "2023-12-07T10:00:00Z"
     }
   ]
-}`;
+}`
+);
 
-const customExample = `{
+const customExample = computed(
+  () => `{
   "alerts": [
     {
       "instance": "web-server-01",
@@ -374,9 +438,11 @@ const customExample = `{
       "timestamp": "2023-12-07T10:00:00Z"
     }
   ]
-}`;
+}`
+);
 
-const successResponse = `{
+const successResponse = computed(
+  () => `{
   "success": true,
   "message": "分发完成",
   "data": {
@@ -393,15 +459,19 @@ const successResponse = `{
       }
     ]
   }
-}`;
+}`
+);
 
-const errorResponse = `{
+const errorResponse = computed(
+  () => `{
   "success": false,
   "message": "分发失败",
   "error": "Invalid request format"
-}`;
+}`
+);
 
-const partialResponse = `{
+const partialResponse = computed(
+  () => `{
   "success": true,
   "message": "部分分发成功",
   "data": {
@@ -422,9 +492,11 @@ const partialResponse = `{
       }
     ]
   }
-}`;
+}`
+);
 
-const curlExample = `curl -X POST "${distributionApiUrl.value}" \\
+const curlExample = computed(
+  () => `curl -X POST "${distributionApiUrl.value}" \\
   -H "Content-Type: application/json" \\
   -d '{
     "alerts": [
@@ -439,9 +511,87 @@ const curlExample = `curl -X POST "${distributionApiUrl.value}" \\
         }
       }
     ]
-  }'`;
+  }'`
+);
 
-const pythonExample = `import requests
+const alertmanagerConfig = computed(
+  () => `# alertmanager.yml
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alertmanager@example.org'
+
+route:
+  group_by: ['alertname', 'namespace']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'message-push-system'
+
+receivers:
+- name: 'message-push-system'
+  webhook_configs:
+  - url: '${distributionApiUrl.value}'
+    send_resolved: true
+    http_config:
+      timeout: 10s
+    title: 'Prometheus Alert'
+    text: 'Alert Summary: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev', 'instance']`
+);
+
+const prometheusRules = computed(
+  () => `# prometheus-rules.yml
+groups:
+- name: system-alerts
+  rules:
+  - alert: HighCPUUsage
+    expr: cpu_usage_percent > 90
+    for: 5m
+    labels:
+      severity: critical
+      instance: "{{ $labels.instance }}"
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+  - alert: HighMemoryUsage
+    expr: memory_usage_percent > 85
+    for: 5m
+    labels:
+      severity: warning
+      instance: "{{ $labels.instance }}"
+    annotations:
+      summary: "High memory usage on {{ $labels.instance }}"
+      description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+  - alert: DiskSpaceLow
+    expr: disk_free_percent < 10
+    for: 2m
+    labels:
+      severity: critical
+      instance: "{{ $labels.instance }}"
+    annotations:
+      summary: "Low disk space on {{ $labels.instance }}"
+      description: "Only {{ $value }}% disk space remaining on {{ $labels.instance }}"
+
+  - alert: ServiceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+      instance: "{{ $labels.instance }}"
+    annotations:
+      summary: "Service down on {{ $labels.instance }}"`
+);
+
+const pythonExample = computed(
+  () => `import requests
 import json
 
 url = "${distributionApiUrl.value}"
@@ -461,9 +611,11 @@ data = {
 }
 
 response = requests.post(url, json=data)
-print(response.json())`;
+print(response.json())`
+);
 
-const javascriptExample = `fetch('${distributionApiUrl.value}', {
+const javascriptExample = computed(
+  () => `fetch('${distributionApiUrl.value}', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -484,23 +636,100 @@ const javascriptExample = `fetch('${distributionApiUrl.value}', {
   })
 })
 .then(response => response.json())
-.then(data => console.log(data));`;
+.then(data => console.log(data));`
+);
+
+// Zabbix配置示例
+const zabbixMediaTypeConfig = computed(
+  () => `名称: MessagePushSystem
+类型: Webhook
+URL: ${distributionApiUrl.value}
+HTTP 方法: POST
+内容类型: application/json
+
+参数配置:
+- 参数名: alerts
+- 值: [
+    {
+      "instance": "{HOST.NAME}",
+      "title": "{TRIGGER.NAME}",
+      "content": "{TRIGGER.DESCRIPTION}",
+      "severity": "{TRIGGER.SEVERITY}",
+      "status": "{TRIGGER.STATUS}",
+      "timestamp": "{EVENT.DATE} {EVENT.TIME}",
+      "host": "{HOST.NAME}",
+      "hostip": "{HOST.IP}",
+      "itemkey": "{ITEM.KEY}",
+      "itemvalue": "{ITEM.VALUE}"
+    }
+  ]
+
+消息模板:
+主题: Zabbix 告警: {TRIGGER.NAME}
+消息: 
+主机: {HOST.NAME} ({HOST.IP})
+触发器: {TRIGGER.NAME}
+状态: {TRIGGER.STATUS}
+严重程度: {TRIGGER.SEVERITY}
+时间: {EVENT.DATE} {EVENT.TIME}
+描述: {TRIGGER.DESCRIPTION}`
+);
+
+const zabbixActionConfig = computed(
+  () => `动作配置:
+名称: Send to MessagePushSystem
+事件源: 触发器
+
+条件:
+- 维护状态 不等于 "在维护中"
+- 触发器状态 等于 "PROBLEM"
+- 触发器严重程度 >= "警告"
+
+操作:
+1. 发送消息
+   - 发送给用户: Admin (添加媒体类型: MessagePushSystem)
+   - 仅发送到: MessagePushSystem
+   - 自定义消息: 是
+   
+2. 恢复操作 (可选)
+   - 条件: 触发器状态 等于 "OK"
+   - 操作: 发送消息 (告警恢复通知)`
+);
+
+const zabbixDataExample = computed(
+  () => `{
+  "alerts": [
+    {
+      "instance": "web-server-01",
+      "title": "High CPU usage on web-server-01",
+      "content": "CPU使用率超过90%，当前值: 95%",
+      "severity": "4",
+      "status": "PROBLEM",
+      "timestamp": "2023-12-07 10:30:00",
+      "host": "web-server-01",
+      "hostip": "192.168.1.100",
+      "itemkey": "system.cpu.util",
+      "itemvalue": "95.5"
+    }
+  ]
+}`
+);
 
 // 工具方法
 const getRobotTypeName = (type: string) => {
   const typeMap: Record<string, string> = {
-    'wechat': '企业微信',
-    'feishu': '飞书',
-    'dingtalk': '钉钉'
+    wechat: '企业微信',
+    feishu: '飞书',
+    dingtalk: '钉钉',
   };
   return typeMap[type] || type;
 };
 
 const getRobotTypeTagType = (type: string) => {
   const typeMap: Record<string, string> = {
-    'wechat': 'success',
-    'feishu': 'warning',
-    'dingtalk': 'info'
+    wechat: 'success',
+    feishu: 'warning',
+    dingtalk: 'info',
   };
   return typeMap[type] || 'info';
 };
@@ -511,8 +740,8 @@ const fetchData = async () => {
   try {
     const response = await distributionApi.getChannels();
     channels.value = response.data.results || response.data;
-  } catch (error) {
-    console.error('获取分发通道失败:', error);
+  } catch (_error) {
+    console.error('获取分发通道失败:', _error);
     ElMessage.error('获取分发通道失败');
   } finally {
     loading.value = false;
@@ -524,7 +753,7 @@ const copyDistributionUrl = async () => {
   try {
     await navigator.clipboard.writeText(distributionApiUrl.value);
     ElMessage.success('分发接口地址已复制到剪贴板');
-  } catch (error) {
+  } catch (_error) {
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -538,7 +767,7 @@ const showApiDocs = () => {
 // 测试分发接口
 const testDistributionApi = () => {
   testForm.format = 'prometheus';
-  testForm.data = prometheusExample;
+  testForm.data = prometheusExample.value;
   testResult.value = null;
   showTestDialog.value = true;
 };
@@ -546,14 +775,21 @@ const testDistributionApi = () => {
 // 查看示例
 const viewExamples = () => {
   showExamplesDialog.value = true;
+  activeExampleTab.value = 'alertmanager';
+};
+
+// 处理示例对话框打开事件
+const handleExamplesDialogOpen = () => {
+  // 确保默认选中第一个标签页
+  activeExampleTab.value = 'alertmanager';
 };
 
 // 加载测试数据
 const loadTestData = () => {
   if (testForm.format === 'prometheus') {
-    testForm.data = prometheusExample;
+    testForm.data = prometheusExample.value;
   } else {
-    testForm.data = customExample;
+    testForm.data = customExample.value;
   }
 };
 
@@ -570,20 +806,20 @@ const executeDistributionTest = async () => {
     const response = await fetch(distributionApiUrl.value, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    
+
     const result = await response.json();
     testResult.value = {
       success: response.ok,
-      response: JSON.stringify(result, null, 2)
+      response: JSON.stringify(result, null, 2),
     };
-  } catch (error) {
+  } catch (_error) {
     testResult.value = {
       success: false,
-      response: `请求失败: ${error}`
+      response: `请求失败: ${_error}`,
     };
   } finally {
     testLoading.value = false;
@@ -599,30 +835,30 @@ const testChannel = async (channel: DistributionChannel) => {
           labels: {
             alertname: 'TestAlert',
             instance: 'test-instance',
-            severity: 'info'
+            severity: 'info',
           },
           annotations: {
-            summary: `测试通道: ${channel.name}`
-          }
-        }
-      ]
+            summary: `测试通道: ${channel.name}`,
+          },
+        },
+      ],
     };
-    
+
     const response = await fetch(distributionApiUrl.value, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(testData)
+      body: JSON.stringify(testData),
     });
-    
+
     if (response.ok) {
       ElMessage.success(`通道 ${channel.name} 测试成功`);
     } else {
       ElMessage.error(`通道 ${channel.name} 测试失败`);
     }
-  } catch (error) {
-    ElMessage.error(`通道 ${channel.name} 测试失败: ${error}`);
+  } catch (_error) {
+    ElMessage.error(`通道 ${channel.name} 测试失败: ${_error}`);
   }
 };
 
@@ -634,7 +870,8 @@ onMounted(() => {
 
 <style scoped>
 .distribution-api-container {
-  padding: 20px;
+  padding: 0;
+  width: 100%;
 }
 
 .card-header {
@@ -650,18 +887,18 @@ onMounted(() => {
 .distribution-card,
 .stats-card,
 .channels-card {
-  margin-bottom: 20px;
+  margin-bottom: 0px;
 }
 
-.distribution-info {
-  padding: 20px 0;
-}
+/* .distribution-info {
+  padding: 20px;
+} */
 
 .api-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .api-header h4 {
@@ -671,7 +908,7 @@ onMounted(() => {
 
 .api-url-display {
   margin-bottom: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f6f8fa;
   border-radius: 6px;
   border: 1px solid #d1d9e0;
@@ -691,7 +928,7 @@ onMounted(() => {
 .action-buttons {
   display: flex;
   gap: 15px;
-  margin-top: 30px;
+  margin-top: 10px;
   justify-content: center;
 }
 

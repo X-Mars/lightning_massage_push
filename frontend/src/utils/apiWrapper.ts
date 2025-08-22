@@ -11,24 +11,24 @@ import { handleApiError } from '../utils/errorHandler';
  * @returns API调用结果
  */
 export async function withErrorHandling<T>(
-  apiCall: () => Promise<T>, 
+  apiCall: () => Promise<T>,
   errorMessage: string = '请求失败'
-): Promise<T | { error: true, message: string }> {
+): Promise<T | { error: true; message: string }> {
   try {
     return await apiCall();
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 使用错误处理工具处理错误
     const message = handleApiError(error, errorMessage);
     return {
       error: true,
-      message
+      message,
     };
   }
 }
 
 /**
  * 使用示例:
- * 
+ *
  * // 原始API调用
  * try {
  *   const result = await api.getData();
@@ -36,7 +36,7 @@ export async function withErrorHandling<T>(
  * } catch (error) {
  *   // 处理错误
  * }
- * 
+ *
  * // 使用包装器
  * const result = await withErrorHandling(() => api.getData(), '获取数据失败');
  * if (!result.error) {

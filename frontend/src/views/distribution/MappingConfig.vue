@@ -78,18 +78,21 @@
         stripe
         border
         @selection-change="handleSelectionChange"
-        style="width: 100%; display: table;"
+        style="width: 100%; display: table"
       >
         <el-table-column type="selection" width="50" />
-        <el-table-column prop="instance_name" label="实例名称" min-width="200" show-overflow-tooltip>
+        <el-table-column
+          prop="instance_name"
+          label="实例名称"
+          min-width="200"
+          show-overflow-tooltip
+        >
           <template #default="scope">
             <div class="instance-info">
               <el-tag :type="getInstanceTagType(scope.row)" size="small">
                 {{ scope.row.instance_name }}
               </el-tag>
-              <div class="instance-count">
-                绑定通道: {{ scope.row.channel_count || 0 }}
-              </div>
+              <div class="instance-count">绑定通道: {{ scope.row.channel_count || 0 }}</div>
             </div>
           </template>
         </el-table-column>
@@ -102,7 +105,7 @@
                   :key="channelName"
                   type="success"
                   size="small"
-                  style="margin-right: 4px; margin-bottom: 2px;"
+                  style="margin-right: 4px; margin-bottom: 2px"
                 >
                   {{ channelName }}
                 </el-tag>
@@ -118,33 +121,26 @@
         </el-table-column>
         <el-table-column prop="created_at" label="发现时间" width="160">
           <template #default="scope">
-            {{ formatDate(scope.row.created_at) }}
+            {{ formatToLocalTime(scope.row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="90" align="center">
           <template #default="scope">
-            <el-tag :type="(scope.row.channel_count && scope.row.channel_count > 0) ? 'success' : 'warning'" size="small">
-              {{ (scope.row.channel_count && scope.row.channel_count > 0) ? '已配置' : '未配置' }}
+            <el-tag
+              :type="scope.row.channel_count && scope.row.channel_count > 0 ? 'success' : 'warning'"
+              size="small"
+            >
+              {{ scope.row.channel_count && scope.row.channel_count > 0 ? '已配置' : '未配置' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" align="center">
           <template #default="scope">
-            <el-button
-              type="primary"
-              size="small"
-              @click="editInstanceChannels(scope.row)"
-              plain
-            >
+            <el-button type="primary" size="small" @click="editInstanceChannels(scope.row)" plain>
               <el-icon><Edit /></el-icon>
               配置通道
             </el-button>
-            <el-button
-              type="primary"
-              size="small"
-              @click="viewInstanceDetail(scope.row)"
-              plain
-            >
+            <el-button type="primary" size="small" @click="viewInstanceDetail(scope.row)" plain>
               <el-icon><View /></el-icon>
               详情
             </el-button>
@@ -172,15 +168,15 @@
         <el-form-item label="选择通道">
           <div class="channel-selection">
             <div class="selection-header">
-              <el-button 
-                size="small" 
+              <el-button
+                size="small"
                 @click="selectAllChannelsForBatch"
                 :disabled="batchForm.channel_ids.length === channels.length"
               >
                 全选
               </el-button>
-              <el-button 
-                size="small" 
+              <el-button
+                size="small"
                 @click="clearAllChannelsForBatch"
                 :disabled="batchForm.channel_ids.length === 0"
               >
@@ -190,10 +186,7 @@
                 已选择 {{ batchForm.channel_ids.length }} / {{ channels.length }} 个通道
               </span>
             </div>
-            <el-checkbox-group
-              v-model="batchForm.channel_ids"
-              class="channel-checkbox-group"
-            >
+            <el-checkbox-group v-model="batchForm.channel_ids" class="channel-checkbox-group">
               <el-checkbox
                 v-for="channel in channels"
                 :key="channel.id"
@@ -220,7 +213,7 @@
               type="success"
               closable
               @close="removeChannelFromBatch(channelId)"
-              style="margin: 0 4px 4px 0;"
+              style="margin: 0 4px 4px 0"
             >
               {{ getChannelName(channelId) }}
             </el-tag>
@@ -229,11 +222,11 @@
 
         <el-form-item label="选择实例">
           <div class="selected-instances">
-            <el-tag 
-              v-for="instance in selectedInstances" 
+            <el-tag
+              v-for="instance in selectedInstances"
               :key="instance.id"
               type="primary"
-              style="margin: 0 4px 4px 0;"
+              style="margin: 0 4px 4px 0"
             >
               {{ instance.instance_name }}
             </el-tag>
@@ -300,7 +293,7 @@
                 v-for="channelName in currentInstance.channel_names"
                 :key="channelName"
                 type="success"
-                style="margin-right: 4px; margin-bottom: 2px;"
+                style="margin-right: 4px; margin-bottom: 2px"
               >
                 {{ channelName }}
               </el-tag>
@@ -314,10 +307,12 @@
             {{ currentInstance.alert_count }}
           </el-descriptions-item>
           <el-descriptions-item label="发现时间">
-            {{ formatDate(currentInstance.created_at) }}
+            {{ formatToLocalTime(currentInstance.created_at) }}
           </el-descriptions-item>
           <el-descriptions-item label="最后告警">
-            {{ currentInstance.last_alert_time ? formatDate(currentInstance.last_alert_time) : '-' }}
+            {{
+              currentInstance.last_alert_time ? formatToLocalTime(currentInstance.last_alert_time) : '-'
+            }}
           </el-descriptions-item>
         </el-descriptions>
 
@@ -327,7 +322,7 @@
           <el-table :data="instanceAlerts" size="small">
             <el-table-column prop="alert_time" label="告警时间" width="180">
               <template #default="scope">
-                {{ formatDate(scope.row.alert_time) }}
+                {{ formatToLocalTime(scope.row.alert_time) }}
               </template>
             </el-table-column>
             <el-table-column prop="rule_name" label="触发规则" />
@@ -345,6 +340,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Refresh, Search, View, Edit } from '@element-plus/icons-vue';
 import { distributionApi } from '../../api';
 import type { InstanceMapping, DistributionChannel, AlertRecord } from '../../types';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 响应式数据
 const loading = ref(false);
@@ -369,11 +365,11 @@ const instanceAlerts = ref<AlertRecord[]>([]);
 
 // 表单数据
 const batchForm = reactive({
-  channel_ids: [] as number[]
+  channel_ids: [] as number[],
 });
 
 const editForm = reactive({
-  channel_ids: [] as number[]
+  channel_ids: [] as number[],
 });
 
 // 计算属性
@@ -401,8 +397,9 @@ const filteredInstances = computed(() => {
 
   // 通道过滤
   if (channelFilter.value) {
-    filtered = filtered.filter(instance =>
-      instance.channel_ids && instance.channel_ids.includes(channelFilter.value as number)
+    filtered = filtered.filter(
+      instance =>
+        instance.channel_ids && instance.channel_ids.includes(channelFilter.value as number)
     );
   }
 
@@ -410,21 +407,14 @@ const filteredInstances = computed(() => {
 });
 
 const configuredCount = computed(() => {
-  return instances.value.filter(instance => 
-    instance.channel_count && instance.channel_count > 0
-  ).length;
+  return instances.value.filter(instance => instance.channel_count && instance.channel_count > 0)
+    .length;
 });
 
 const unconfiguredCount = computed(() => {
-  return instances.value.filter(instance => 
-    !instance.channel_count || instance.channel_count === 0
-  ).length;
+  return instances.value.filter(instance => !instance.channel_count || instance.channel_count === 0)
+    .length;
 });
-
-// 工具方法
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString('zh-CN');
-};
 
 const getInstanceTagType = (instance: InstanceMapping) => {
   if (instance.channel_count && instance.channel_count > 0) {
@@ -444,13 +434,13 @@ const fetchInstances = async () => {
   try {
     const response = await distributionApi.getInstances({
       page: currentPage.value,
-      page_size: pageSize.value
+      page_size: pageSize.value,
     });
-    
+
     instances.value = response.data.results || response.data;
     total.value = response.data.count || response.data.length;
-  } catch (error) {
-    console.error('获取实例列表失败:', error);
+  } catch (_error) {
+    // console.error('获取实例列表失败:', _error);
     ElMessage.error('获取实例列表失败');
   } finally {
     loading.value = false;
@@ -461,8 +451,8 @@ const fetchChannels = async () => {
   try {
     const response = await distributionApi.getChannels();
     channels.value = response.data.results || response.data;
-  } catch (error) {
-    console.error('获取分发通道列表失败:', error);
+  } catch (_error) {
+    // console.error('获取分发通道列表失败:', _error);
     ElMessage.error('获取分发通道列表失败');
   }
 };
@@ -473,8 +463,8 @@ const refreshInstances = async () => {
     await distributionApi.refreshInstances();
     ElMessage.success('实例刷新成功');
     await fetchInstances();
-  } catch (error) {
-    console.error('刷新实例失败:', error);
+  } catch (_error) {
+    // console.error('刷新实例失败:', _error);
     ElMessage.error('刷新实例失败');
   } finally {
     refreshLoading.value = false;
@@ -520,24 +510,26 @@ const batchConfigureMapping = async () => {
   try {
     await distributionApi.batchConfigureMapping({
       instance_ids: selectedInstances.value.map(i => i.id),
-      channel_ids: batchForm.channel_ids
+      channel_ids: batchForm.channel_ids,
     });
 
     // 更新本地数据
     selectedInstances.value.forEach(instance => {
       instance.channel_ids = [...batchForm.channel_ids];
       instance.channel_count = batchForm.channel_ids.length;
-      instance.channel_names = batchForm.channel_ids.map(id => {
-        const channel = channels.value.find(c => c.id === id);
-        return channel?.name || '';
-      }).filter(name => name);
+      instance.channel_names = batchForm.channel_ids
+        .map(id => {
+          const channel = channels.value.find(c => c.id === id);
+          return channel?.name || '';
+        })
+        .filter(name => name);
     });
 
     ElMessage.success('批量配置成功');
     showBatchDialog.value = false;
     batchForm.channel_ids = [];
-  } catch (error) {
-    console.error('批量配置失败:', error);
+  } catch (_error) {
+    // console.error('批量配置失败:', _error);
     ElMessage.error('批量配置失败');
   } finally {
     batchSaving.value = false;
@@ -547,11 +539,11 @@ const batchConfigureMapping = async () => {
 const batchClearMapping = async () => {
   try {
     await ElMessageBox.confirm('确定要清除选中实例的分发通道配置吗？', '确认清除', {
-      type: 'warning'
+      type: 'warning',
     });
 
     await distributionApi.batchClearMapping({
-      instance_ids: selectedInstances.value.map(i => i.id)
+      instance_ids: selectedInstances.value.map(i => i.id),
     });
 
     // 更新本地数据
@@ -562,9 +554,9 @@ const batchClearMapping = async () => {
     });
 
     ElMessage.success('批量清除成功');
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('批量清除失败:', error);
+  } catch (_error) {
+    if (_error !== 'cancel') {
+      // console.error('批量清除失败:', _error);
       ElMessage.error('批量清除失败');
     }
   }
@@ -583,21 +575,23 @@ const saveInstanceChannels = async () => {
   editSaving.value = true;
   try {
     await distributionApi.updateInstanceMapping(editingInstance.value.id, {
-      channel_ids: editForm.channel_ids
+      channel_ids: editForm.channel_ids,
     });
 
     // 更新本地数据
     editingInstance.value.channel_ids = [...editForm.channel_ids];
     editingInstance.value.channel_count = editForm.channel_ids.length;
-    editingInstance.value.channel_names = editForm.channel_ids.map(id => {
-      const channel = channels.value.find(c => c.id === id);
-      return channel?.name || '';
-    }).filter(name => name);
+    editingInstance.value.channel_names = editForm.channel_ids
+      .map(id => {
+        const channel = channels.value.find(c => c.id === id);
+        return channel?.name || '';
+      })
+      .filter(name => name);
 
     ElMessage.success('保存成功');
     showEditDialog.value = false;
-  } catch (error) {
-    console.error('保存失败:', error);
+  } catch (_error) {
+    // console.error('保存失败:', _error);
     ElMessage.error('保存失败');
   } finally {
     editSaving.value = false;
@@ -606,16 +600,16 @@ const saveInstanceChannels = async () => {
 
 const viewInstanceDetail = async (instance: InstanceMapping) => {
   currentInstance.value = instance;
-  
+
   // 获取告警历史
   try {
     const response = await distributionApi.getInstanceAlerts(instance.id);
     instanceAlerts.value = response.data.results || response.data;
-  } catch (error) {
-    console.error('获取告警历史失败:', error);
+  } catch (_error) {
+    // console.error('获取告警历史失败:', _error);
     instanceAlerts.value = [];
   }
-  
+
   showDetailDialog.value = true;
 };
 
@@ -705,7 +699,8 @@ onMounted(() => {
   align-items: center;
 }
 
-.selected-instances, .selected-channels {
+.selected-instances,
+.selected-channels {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -820,7 +815,6 @@ onMounted(() => {
 }
 
 .el-table th {
-  text-align: center;
   background-color: #fafafa;
 }
 

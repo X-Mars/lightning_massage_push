@@ -13,39 +13,39 @@ export const useRobotStore = defineStore('robot', {
   state: (): RobotState => ({
     robots: [],
     currentRobot: null,
-    loading: false
+    loading: false,
   }),
-  
+
   actions: {
     async fetchRobots(params = {}) {
       this.loading = true;
       try {
         const response = await robotApi.getRobots(params);
-        console.log('机器人API响应:', response);
-        
+        // console.log('机器人API响应:', response);
+
         // 处理分页数据
         if (response.data && response.data.results && Array.isArray(response.data.results)) {
           // 后端启用了分页
           this.robots = response.data.results;
-          console.log('已更新机器人列表:', this.robots);
+          // console.log('已更新机器人列表:', this.robots);
           return {
             total: response.data.count,
-            results: response.data.results
+            results: response.data.results,
           };
         } else if (response.data && Array.isArray(response.data)) {
           // 如果后端没有分页，直接使用数据
           this.robots = response.data;
-          console.log('已更新机器人列表:', this.robots);
+          // console.log('已更新机器人列表:', this.robots);
           return {
             total: response.data.length,
-            results: response.data
+            results: response.data,
           };
         } else {
-          console.error('机器人数据格式错误:', response.data);
+          // console.error('机器人数据格式错误:', response.data);
           ElMessage.error('获取机器人列表失败: 返回数据格式错误');
           return { total: 0, results: [] };
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 使用全局错误处理
         const { handleApiError } = await import('../utils/errorHandler');
         handleApiError(error, '获取机器人列表失败');
@@ -54,14 +54,14 @@ export const useRobotStore = defineStore('robot', {
         this.loading = false;
       }
     },
-    
+
     async fetchRobotById(id: number) {
       this.loading = true;
       try {
         const response = await robotApi.getRobot(id);
         this.currentRobot = response.data;
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 使用全局错误处理
         const { handleApiError } = await import('../utils/errorHandler');
         handleApiError(error, `获取机器人[ID=${id}]详情失败`);
@@ -70,7 +70,7 @@ export const useRobotStore = defineStore('robot', {
         this.loading = false;
       }
     },
-    
+
     async createRobot(robotData: Partial<Robot>) {
       this.loading = true;
       try {
@@ -79,23 +79,23 @@ export const useRobotStore = defineStore('robot', {
         // 添加到列表中
         this.robots.push(response.data);
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 使用全局错误处理
-        const { handleApiError, isFieldError } = await import('../utils/errorHandler');
+        const { handleApiError, isFieldError, isApiError } = await import('../utils/errorHandler');
         const errorMessage = handleApiError(error, '创建机器人失败');
-        
+
         // 返回错误信息，以便在组件中处理
-        return { 
-          error: true, 
+        return {
+          error: true,
           message: errorMessage,
           duplicateField: isFieldError(error, 'english_name') ? 'english_name' : null,
-          fieldErrors: error.response?.data || {}
+          fieldErrors: isApiError(error) ? error.response?.data || {} : {},
         };
       } finally {
         this.loading = false;
       }
     },
-    
+
     async updateRobot(id: number, robotData: Partial<Robot>) {
       this.loading = true;
       try {
@@ -107,23 +107,23 @@ export const useRobotStore = defineStore('robot', {
           this.robots[index] = response.data;
         }
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 使用全局错误处理
-        const { handleApiError, isFieldError } = await import('../utils/errorHandler');
+        const { handleApiError, isFieldError, isApiError } = await import('../utils/errorHandler');
         const errorMessage = handleApiError(error, `更新机器人[ID=${id}]失败`);
-        
+
         // 返回错误信息，以便在组件中处理
-        return { 
-          error: true, 
+        return {
+          error: true,
           message: errorMessage,
           duplicateField: isFieldError(error, 'english_name') ? 'english_name' : null,
-          fieldErrors: error.response?.data || {}
+          fieldErrors: isApiError(error) ? error.response?.data || {} : {},
         };
       } finally {
         this.loading = false;
       }
     },
-    
+
     async deleteRobot(id: number) {
       this.loading = true;
       try {
@@ -132,7 +132,7 @@ export const useRobotStore = defineStore('robot', {
         // 从列表中移除
         this.robots = this.robots.filter(r => r.id !== id);
         return true;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 使用全局错误处理
         const { handleApiError } = await import('../utils/errorHandler');
         handleApiError(error, `删除机器人[ID=${id}]失败`);
@@ -140,6 +140,6 @@ export const useRobotStore = defineStore('robot', {
       } finally {
         this.loading = false;
       }
-    }
-  }
+    },
+  },
 });

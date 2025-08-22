@@ -22,15 +22,12 @@
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="is_active" label="状态" width="100">
           <template #default="scope">
-            <el-switch
-              v-model="scope.row.is_active"
-              @change="toggleRuleStatus(scope.row)"
-            />
+            <el-switch v-model="scope.row.is_active" @change="toggleRuleStatus(scope.row)" />
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.created_at) }}
+            {{ formatToLocalTime(scope.row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200">
@@ -68,12 +65,7 @@
       width="800px"
       :before-close="handleDialogClose"
     >
-      <el-form
-        ref="ruleFormRef"
-        :model="ruleForm"
-        :rules="ruleFormRules"
-        label-width="120px"
-      >
+      <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="120px">
         <el-form-item label="规则名称" prop="name">
           <el-input v-model="ruleForm.name" placeholder="请输入规则名称" />
         </el-form-item>
@@ -110,15 +102,33 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="alerts[].labels.instance">实例名称 (instance)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.project_custom">项目名称 (project_custom)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.cluster">集群名称 (cluster)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.environment">环境 (environment)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.severity">严重级别 (severity)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.job">任务名称 (job)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.vm">虚拟机名称 (vm)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.namespace">命名空间 (namespace)</el-dropdown-item>
-                    <el-dropdown-item command="alerts[].labels.service">服务名称 (service)</el-dropdown-item>
+                    <el-dropdown-item command="alerts[].labels.instance"
+                      >实例名称 (instance)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.project_custom"
+                      >项目名称 (project_custom)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.cluster"
+                      >集群名称 (cluster)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.environment"
+                      >环境 (environment)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.severity"
+                      >严重级别 (severity)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.job"
+                      >任务名称 (job)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.vm"
+                      >虚拟机名称 (vm)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.namespace"
+                      >命名空间 (namespace)</el-dropdown-item
+                    >
+                    <el-dropdown-item command="alerts[].labels.service"
+                      >服务名称 (service)</el-dropdown-item
+                    >
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -131,10 +141,7 @@
         </el-form-item>
 
         <el-form-item label="提取模式" prop="extract_pattern" v-if="ruleForm.type === 'string'">
-          <el-input
-            v-model="ruleForm.extract_pattern"
-            placeholder="例如: {{instance}}"
-          />
+          <el-input v-model="ruleForm.extract_pattern" placeholder="例如: {{instance}}" />
           <div class="form-tip">
             <el-icon><InfoFilled /></el-icon>
             使用{{}}包围要提取的变量名，如：{<!-- -->{ instance }}、{<!-- -->{ hostname }}
@@ -186,6 +193,7 @@ import { Plus, Edit, Delete, InfoFilled, ArrowDown } from '@element-plus/icons-v
 import type { FormInstance, FormRules } from 'element-plus';
 import { distributionApi } from '../../api';
 import type { DistributionRule } from '../../types';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 接口定义
 // Rule接口现在使用导入的DistributionRule类型
@@ -211,20 +219,16 @@ const ruleForm = reactive<DistributionRule>({
   description: '',
   extract_path: '',
   extract_pattern: '',
-  is_active: true
+  is_active: true,
 });
 
 const ruleFormRules: FormRules = {
-  name: [
-    { required: true, message: '请输入规则名称', trigger: 'blur' }
-  ],
-  type: [
-    { required: true, message: '请选择匹配类型', trigger: 'change' }
-  ],
+  name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
+  type: [{ required: true, message: '请选择匹配类型', trigger: 'change' }],
   extract_path: [
-    { 
-      required: true, 
-      message: '请输入JSON提取路径', 
+    {
+      required: true,
+      message: '请输入JSON提取路径',
       trigger: 'blur',
       validator: (_rule, value, callback) => {
         if (ruleForm.type === 'json' && !value) {
@@ -232,13 +236,13 @@ const ruleFormRules: FormRules = {
         } else {
           callback();
         }
-      }
-    }
+      },
+    },
   ],
   extract_pattern: [
-    { 
-      required: true, 
-      message: '请输入字符串提取模式', 
+    {
+      required: true,
+      message: '请输入字符串提取模式',
       trigger: 'blur',
       validator: (_rule, value, callback) => {
         if (ruleForm.type === 'string' && !value) {
@@ -246,9 +250,9 @@ const ruleFormRules: FormRules = {
         } else {
           callback();
         }
-      }
-    }
-  ]
+      },
+    },
+  ],
 };
 
 // 示例数据
@@ -326,13 +330,13 @@ const fetchRules = async () => {
   try {
     const response = await distributionApi.getRules({
       page: currentPage.value,
-      page_size: pageSize.value
+      page_size: pageSize.value,
     });
-    
+
     rules.value = response.data.results || response.data;
     total.value = response.data.count || response.data.length;
-  } catch (error) {
-    console.error('获取规则列表失败:', error);
+  } catch (_error) {
+    // console.error('获取规则列表失败:', _error);
     ElMessage.error('获取规则列表失败');
   } finally {
     loading.value = false;
@@ -341,25 +345,25 @@ const fetchRules = async () => {
 
 const saveRule = async () => {
   if (!ruleFormRef.value) return;
-  
+
   try {
     await ruleFormRef.value.validate();
     saving.value = true;
-    
+
     if (editingRule.value) {
       await distributionApi.updateRule(editingRule.value.id!, ruleForm);
     } else {
       await distributionApi.createRule(ruleForm);
     }
-    
+
     ElMessage.success(editingRule.value ? '规则更新成功' : '规则创建成功');
     handleDialogClose();
     fetchRules();
-  } catch (error) {
-    console.error('保存规则失败:', error);
-    ElMessage.error('保存规则失败');
+  } catch (_error) {
+    // console.error('获取规则列表失败:', _error);
+    ElMessage.error('获取规则列表失败');
   } finally {
-    saving.value = false;
+    loading.value = false;
   }
 };
 
@@ -372,16 +376,16 @@ const editRule = (rule: DistributionRule) => {
 const deleteRule = async (_ruleToDelete: DistributionRule) => {
   try {
     await ElMessageBox.confirm('确定要删除此规则吗？', '确认删除', {
-      type: 'warning'
+      type: 'warning',
     });
-    
+
     await distributionApi.deleteRule(_ruleToDelete.id!);
-    
+
     ElMessage.success('删除成功');
     fetchRules();
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除失败:', error);
+  } catch (_error) {
+    if (_error !== 'cancel') {
+      // console.error('删除失败:', _error);
       ElMessage.error('删除失败');
     }
   }
@@ -391,9 +395,9 @@ const toggleRuleStatus = async (rule: DistributionRule) => {
   try {
     await distributionApi.updateRule(rule.id!, { is_active: rule.is_active });
     ElMessage.success('状态更新成功');
-  } catch (error) {
+  } catch (_error) {
     rule.is_active = !rule.is_active; // 回滚状态
-    console.error('状态更新失败:', error);
+    // console.error('状态更新失败:', _error);
     ElMessage.error('状态更新失败');
   }
 };
@@ -412,18 +416,18 @@ const testRule = async () => {
       type: ruleForm.type,
       extract_path: ruleForm.extract_path,
       extract_pattern: ruleForm.extract_pattern,
-      test_data: testData.value
+      test_data: testData.value,
     });
-    
+
     testResult.value = response.data.extracted_values || [];
-    
+
     if (testResult.value.length === 0) {
       ElMessage.warning('未提取到任何值，请检查规则配置');
     } else {
       ElMessage.success(`成功提取到 ${testResult.value.length} 个值`);
     }
-  } catch (error) {
-    console.error('测试失败:', error);
+  } catch (_error) {
+    // console.error('测试失败:', _error);
     ElMessage.error('测试失败：请检查数据格式和规则配置');
   } finally {
     testing.value = false;
@@ -445,7 +449,7 @@ const handleDialogClose = () => {
   editingRule.value = null;
   testResult.value = [];
   testData.value = '';
-  
+
   // 重置表单
   Object.assign(ruleForm, {
     name: '',
@@ -453,9 +457,9 @@ const handleDialogClose = () => {
     description: '',
     extract_path: '',
     extract_pattern: '',
-    is_active: true
+    is_active: true,
   });
-  
+
   ruleFormRef.value?.resetFields();
 };
 
@@ -467,10 +471,6 @@ const handleSizeChange = (size: number) => {
 const handleCurrentChange = (page: number) => {
   currentPage.value = page;
   fetchRules();
-};
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString('zh-CN');
 };
 
 // 自动补全和预设路径功能
@@ -489,13 +489,14 @@ const getPathSuggestions = (queryString: string, callback: Function) => {
     { value: 'alerts[].labels.department', description: '部门' },
     { value: 'alerts[].labels.group', description: '组' },
     { value: 'alerts[].labels.physical_server', description: '物理服务器' },
-    { value: 'alerts[].labels.vim', description: 'VIM' }
+    { value: 'alerts[].labels.vim', description: 'VIM' },
   ];
 
   const results = queryString
-    ? suggestions.filter(item =>
-        item.value.toLowerCase().includes(queryString.toLowerCase()) ||
-        item.description.includes(queryString)
+    ? suggestions.filter(
+        item =>
+          item.value.toLowerCase().includes(queryString.toLowerCase()) ||
+          item.description.includes(queryString)
       )
     : suggestions;
 

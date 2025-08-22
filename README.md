@@ -1,7 +1,5 @@
 # ⚡ 闪电推送 - 企业级消息推送系统
 
-<div align="center">
-
 ![闪电推送](./frontend/src/assets/lightning.svg)
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -10,13 +8,11 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://typescriptlang.org/)
 
-**一个功能强大、易于使用的前后端分离消息推送系统**
+## 功能强大、易于使用的前后端分离消息推送系统
 
 支持企业微信、飞书、钉钉多平台消息推送 | 智能分发 | 模板引擎 | 实时监控
 
 [快速开始](#-快速开始) • [功能特性](#-功能特性) • [API文档](#-api文档) • [生产部署](#-生产环境部署)
-
-</div>
 
 ---
 
@@ -50,6 +46,7 @@
 - 🎛️ **批量操作**: 支持批量配置和管理
 - 📱 **响应式设计**: 完美适配PC和移动端
 - 🔧 **一键部署**: 提供完整的部署脚本和Docker支持
+- 🌍 **多环境支持**: 完整的开发/测试/预发布/生产环境配置体系
 
 ## 🏗️ 技术架构
 
@@ -129,9 +126,15 @@ message-push-system/
     ├── 📄 vite.config.ts         # Vite配置
     ├── 📄 tsconfig.json          # TypeScript配置
     ├── 📄 index.html             # 入口HTML
+    ├── 📄 .env.development       # 开发环境配置
+    ├── 📄 .env.test              # 测试环境配置
+    ├── 📄 .env.staging           # 预发布环境配置
+    ├── 📄 .env.production        # 生产环境配置
+    ├── 📄 ENV_CONFIG_GUIDE.md    # 环境配置使用指南
     └── 📁 src/                   # 源代码目录
         ├── 📄 main.ts            # 应用入口
         ├── 📄 App.vue            # 根组件
+        ├── 📄 env.d.ts           # 环境变量类型定义
         ├── 📁 api/               # API接口层
         ├── 📁 assets/            # 静态资源
         ├── 📁 components/        # 公共组件
@@ -139,6 +142,8 @@ message-push-system/
         ├── 📁 stores/            # 状态管理
         ├── 📁 types/             # TypeScript类型
         ├── 📁 utils/             # 工具函数
+        │   ├── 📄 envConfig.ts   # 环境配置工具类
+        │   └── 📄 apiConfig.ts   # API配置工具类
         └── 📁 views/             # 页面组件
             ├── 📁 template/      # 模板管理
             ├── 📁 robot/         # 机器人管理
@@ -186,7 +191,7 @@ chmod +x start.sh
 cd message-push-system/backend
 ```
 
-2. 创建虚拟环境并安装依赖：
+#### 创建虚拟环境并安装依赖
 
 ```bash
 python -m venv venv
@@ -195,20 +200,20 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-3. 配置数据库：
+#### 配置数据库
 
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-4. 创建管理员账户：
+#### 创建管理员账户
 
 ```bash
 python manage.py createsuperuser
 ```
 
-5. 启动开发服务器：
+#### 启动开发服务器
 
 ```bash
 python manage.py runserver
@@ -222,23 +227,102 @@ python manage.py runserver
 cd message-push-system/frontend
 ```
 
-2. 安装项目依赖：
+#### 安装项目依赖
 
 ```bash
 npm install
 ```
 
-3. 开发模式启动：
+#### 环境配置
+
+项目支持多环境配置，已预置4个环境文件：
+
+- `.env.development` - 开发环境
+- `.env.test` - 测试环境
+- `.env.staging` - 预发布环境
+- `.env.production` - 生产环境
+
+根据需要修改对应环境文件中的配置：
 
 ```bash
+# 修改开发环境配置
+vim .env.development
+
+# 修改生产环境配置
+vim .env.production
+```
+
+#### 开发模式启动
+
+```bash
+# 开发环境（默认）
 npm run dev
+
+# 测试环境
+npm run dev:test
+
+# 预发布环境
+npm run dev:staging
 ```
 
-4. 生产环境构建：
+#### 生产环境构建
 
 ```bash
+# 生产构建（默认）
 npm run build
+
+# 指定环境构建
+npm run build:dev      # 开发构建
+npm run build:test     # 测试构建
+npm run build:staging  # 预发布构建
+npm run build:prod     # 生产构建
 ```
+
+#### 预览构建结果
+
+```bash
+# 预览生产构建
+npm run preview
+
+# 预览其他环境构建
+npm run preview:test
+npm run preview:staging
+npm run preview:prod
+```
+
+### 🌍 环境配置说明
+
+#### 环境变量配置
+
+每个环境文件支持以下配置项：
+
+| 变量名 | 说明 | 示例值 |
+|-------|------|--------|
+| `VITE_NODE_ENV` | 节点环境 | `development` |
+| `VITE_API_BASE_URL` | API基础地址 | `http://localhost:8000` |
+| `VITE_APP_TITLE` | 应用标题 | `闪电推送系统` |
+| `VITE_DEBUG` | 调试模式 | `true/false` |
+| `VITE_LOG_LEVEL` | 日志级别 | `debug/info/warn/error` |
+| `VITE_SHOW_ENV_TAG` | 显示环境标识 | `true/false` |
+| `VITE_API_TIMEOUT` | API超时时间(ms) | `10000` |
+
+#### 环境特性对比
+
+| 特性 | 开发环境 | 测试环境 | 预发布环境 | 生产环境 |
+|------|----------|----------|------------|----------|
+| 调试模式 | ✅ | ✅ | ❌ | ❌ |
+| 环境标识 | ✅ | ✅ | ✅ | ❌ |
+| 开发工具 | ✅ | ✅ | ❌ | ❌ |
+| 源码映射 | ✅ | ✅ | ✅ | ❌ |
+| 代码压缩 | ❌ | ❌ | ✅ | ✅ |
+| 错误上报 | ❌ | ❌ | ✅ | ✅ |
+
+#### 部署建议
+
+- **开发环境**: 使用 `npm run dev` 进行本地开发
+- **测试环境**: 使用 `npm run build:test` 构建后部署到测试服务器
+- **预发布环境**: 使用 `npm run build:staging` 构建，进行上线前最后验证
+- **生产环境**: 使用 `npm run build:prod` 构建，确保性能和安全性最优
 
 ## 📚 API文档
 
@@ -919,6 +1003,130 @@ npm run test:e2e
 npm run test:coverage
 ```
 
+## 🌍 环境配置详解
+
+### 📋 环境文件说明
+
+系统采用基于 Vite 的多环境配置方案，支持以下4个预定义环境：
+
+| 环境 | 文件名 | 用途 | API地址示例 |
+|------|--------|------|-------------|
+| 开发环境 | `.env.development` | 本地开发调试 | `http://localhost:8000` |
+| 测试环境 | `.env.test` | 功能测试验证 | `http://test-api.example.com` |
+| 预发布环境 | `.env.staging` | 上线前验证 | `https://staging-api.example.com` |
+| 生产环境 | `.env.production` | 正式生产环境 | `https://api.example.com` |
+
+### ⚙️ 环境变量说明
+
+#### 核心配置项
+
+```bash
+# 节点环境
+VITE_NODE_ENV=development
+
+# API基础地址（必须配置）
+VITE_API_BASE_URL=http://localhost:8000
+
+# 应用信息
+VITE_APP_TITLE=闪电推送系统
+VITE_APP_VERSION=1.0.0
+
+# 功能开关
+VITE_DEBUG=true                    # 调试模式
+VITE_SHOW_ENV_TAG=true            # 显示环境标识
+VITE_DEV_TOOLS=true               # 开发工具
+```
+
+#### 网络配置
+
+```bash
+# API配置
+VITE_API_TIMEOUT=10000            # API超时时间(ms)
+VITE_WS_BASE_URL=ws://localhost:8000  # WebSocket地址
+
+# CDN配置
+VITE_CDN_URL=https://cdn.example.com
+```
+
+#### 监控与分析
+
+```bash
+# 日志配置
+VITE_LOG_LEVEL=debug              # debug|info|warn|error
+
+# 监控配置
+VITE_ENABLE_PERFORMANCE=true      # 性能监控
+VITE_ENABLE_ERROR_REPORTING=true  # 错误上报
+VITE_SENTRY_DSN=                  # Sentry DSN
+
+# 统计分析
+VITE_ENABLE_ANALYTICS=true        # 统计分析
+```
+
+### 🚀 使用示例
+
+#### 代码中使用环境变量
+
+```typescript
+// 直接使用
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+const isDebug = import.meta.env.VITE_DEBUG === 'true';
+
+// 使用环境配置工具类
+import { EnvConfig } from '@/utils/envConfig';
+
+console.log(EnvConfig.apiBaseUrl);      // API地址
+console.log(EnvConfig.isProduction);    // 是否生产环境
+console.log(EnvConfig.appVersion);      // 应用版本
+
+// 环境判断
+if (EnvConfig.isDevelopment) {
+  // 开发环境特有逻辑
+}
+```
+
+#### 部署脚本示例
+
+```bash
+#!/bin/bash
+# 部署脚本示例
+
+# 测试环境部署
+echo "构建测试环境..."
+npm run build:test
+echo "部署到测试服务器..."
+rsync -av dist/ user@test-server:/var/www/html/
+
+# 生产环境部署
+echo "构建生产环境..."
+npm run build:prod
+echo "部署到生产服务器..."
+rsync -av dist/ user@prod-server:/var/www/html/
+```
+
+### 🔧 自定义环境
+
+如需新增环境，按以下步骤操作：
+
+1. **创建环境文件**：`touch .env.{环境名}`
+2. **配置package.json脚本**：
+
+   ```json
+   {
+     "scripts": {
+       "dev:custom": "vite --mode custom",
+       "build:custom": "vue-tsc -b && vite build --mode custom"
+     }
+   }
+   ```
+
+3. **更新环境工具类**：在 `EnvConfig` 中添加环境判断
+4. **配置部署流程**：更新CI/CD脚本
+
+### 📝 配置文件参考
+
+详细的环境配置说明请参考：[ENV_CONFIG_GUIDE.md](frontend/ENV_CONFIG_GUIDE.md)
+
 ## 📄 许可证
 
 本项目基于 [MIT License](LICENSE) 开源协议发布。
@@ -949,10 +1157,6 @@ npm run test:coverage
 
 ---
 
-<div align="center">
-
 **⭐ 如果这个项目对你有帮助，请给它一个星标！**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=X-Mars/lightning_massage_push&type=Date)](https://star-history.com/#X-Mars/lightning_massage_push&Date)
-
-</div>

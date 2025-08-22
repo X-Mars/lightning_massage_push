@@ -25,7 +25,7 @@ export function toPinyin(str: string): string {
 
   // 去除字符串中的空格
   const trimmedStr = str.replace(/\s+/g, '');
-  
+
   // 如果去空格后为空字符串
   if (!trimmedStr) {
     return '';
@@ -39,9 +39,9 @@ export function toPinyin(str: string): string {
   // 将中文转换为拼音，不带声调
   const pinyinArray = pinyin(trimmedStr, {
     style: pinyin.STYLE_NORMAL, // 不带声调
-    heteronym: false // 不启用多音字模式
+    heteronym: false, // 不启用多音字模式
   });
-  
+
   // 将拼音数组转换为驼峰命名法格式
   return pinyinArray
     .map((item, index) => {

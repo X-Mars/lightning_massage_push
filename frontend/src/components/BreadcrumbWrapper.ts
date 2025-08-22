@@ -6,5 +6,5 @@ export default defineComponent({
   name: 'BreadcrumbWrapper',
   setup() {
     return () => h(BreadcrumbComp);
-  }
+  },
 });

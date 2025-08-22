@@ -13,7 +13,7 @@
           </div>
         </div>
       </template>
-      
+
       <div v-loading="loading">
         <!-- 按机器人分组展示 -->
         <div v-if="robotGroups.length > 0">
@@ -24,12 +24,12 @@
                 {{ group.robots.length }} 个机器人
               </el-tag>
             </div>
-            
+
             <div v-for="robot in group.robots" :key="robot.id" class="robot-section">
               <div class="robot-header">
                 <h5>{{ robot.name }}</h5>
               </div>
-              
+
               <el-table
                 :data="getTemplatesForRobot(robot, group.templates)"
                 stripe
@@ -44,7 +44,7 @@
                     <el-tabs type="border-card" class="api-tabs">
                       <el-tab-pane label="ID模式">
                         <div class="api-url-container">
-                          <div 
+                          <div
                             class="api-url-text api-url-clickable"
                             @click="copyApiUrl(scope.row.template_id, scope.row.robot_id)"
                             title="点击复制接口地址"
@@ -55,7 +55,7 @@
                       </el-tab-pane>
                       <el-tab-pane label="名称模式">
                         <div class="api-url-container">
-                          <div 
+                          <div
                             class="api-url-text api-url-clickable name-mode"
                             @click="copyApiUrlByName(scope.row.template_id)"
                             title="点击复制接口地址"
@@ -67,23 +67,31 @@
                     </el-tabs>
                   </template>
                 </el-table-column>
-                <el-table-column label="操作" width="180">
+                <el-table-column label="操作" width="280">
                   <template #default="scope">
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click="showApiDocs(scope.row.template_id, scope.row.robot_id)" 
+                    <el-button
+                      type="primary"
+                      size="small"
+                      @click="showApiDocs(scope.row.template_id, scope.row.robot_id)"
                       plain
                     >
                       查看文档
                     </el-button>
-                    <el-button 
-                      type="success" 
-                      size="small" 
-                      @click="testApi(scope.row.template_id, scope.row.robot_id)" 
+                    <el-button
+                      type="success"
+                      size="small"
+                      @click="testApi(scope.row.template_id, scope.row.robot_id)"
                       plain
                     >
                       测试接口
+                    </el-button>
+                    <el-button
+                      type="warning"
+                      size="small"
+                      @click="viewExamples(scope.row.template_id, scope.row.robot_id)"
+                      plain
+                    >
+                      查看示例
                     </el-button>
                   </template>
                 </el-table-column>
@@ -97,7 +105,11 @@
     </el-card>
 
     <!-- API文档对话框 -->
-    <el-dialog v-model="showDocsDialog" :title="`API文档 - ${currentTemplateInfo?.name}`" width="800px">
+    <el-dialog
+      v-model="showDocsDialog"
+      :title="`API文档 - ${currentTemplateInfo?.name}`"
+      width="800px"
+    >
       <div v-if="currentTemplateInfo">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="接口地址">
@@ -143,14 +155,18 @@
     </el-dialog>
 
     <!-- API测试对话框 -->
-    <el-dialog v-model="showTestDialog" :title="`测试API - ${currentTemplateInfo?.name}`" width="600px">
+    <el-dialog
+      v-model="showTestDialog"
+      :title="`测试API - ${currentTemplateInfo?.name}`"
+      width="600px"
+    >
       <div v-if="currentTemplateInfo">
         <el-form :model="testForm" label-width="100px">
           <el-form-item label="接口地址">
             <el-input v-model="currentApiUrl" disabled />
           </el-form-item>
           <el-form-item label="请求数据">
-            <el-input 
+            <el-input
               v-model="testForm.data"
               type="textarea"
               :rows="8"
@@ -158,7 +174,7 @@
             />
           </el-form-item>
         </el-form>
-        
+
         <div v-if="testResult" class="test-result">
           <h4>测试结果</h4>
           <el-alert
@@ -169,7 +185,7 @@
           <pre class="result-content">{{ testResult.response }}</pre>
         </div>
       </div>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="showTestDialog = false">取消</el-button>
@@ -178,6 +194,51 @@
           </el-button>
         </span>
       </template>
+    </el-dialog>
+
+    <!-- 示例对话框 -->
+    <el-dialog
+      v-model="showExamplesDialog"
+      :title="`接口示例 - ${currentTemplateInfo?.name}`"
+      width="800px"
+    >
+      <div v-if="currentTemplateInfo">
+        <el-tabs v-model="activeExampleTab">
+          <el-tab-pane label="curl 示例" name="curl">
+            <div class="docs-content">
+              <h4>使用 curl 发送请求</h4>
+              <pre class="code-block">{{ curlExample }}</pre>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="Python 示例" name="python">
+            <div class="docs-content">
+              <h4>使用 Python requests 库</h4>
+              <pre class="code-block">{{ pythonExample }}</pre>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="JavaScript 示例" name="javascript">
+            <div class="docs-content">
+              <h4>使用 JavaScript fetch API</h4>
+              <pre class="code-block">{{ javascriptExample }}</pre>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="集成示例" name="integration">
+            <div class="docs-content">
+              <h4>监控系统集成</h4>
+              <p>以下是将接口集成到常见监控系统的示例：</p>
+
+              <h5>Prometheus AlertManager 集成</h5>
+              <pre class="code-block">{{ alertmanagerExample }}</pre>
+
+              <h5>脚本集成示例</h5>
+              <pre class="code-block">{{ scriptExample }}</pre>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -193,6 +254,7 @@ import type { Robot, Template } from '../../types';
 const loading = ref(false);
 const showDocsDialog = ref(false);
 const showTestDialog = ref(false);
+const showExamplesDialog = ref(false);
 const testLoading = ref(false);
 const robots = ref<Robot[]>([]);
 const templates = ref<Template[]>([]);
@@ -200,28 +262,29 @@ const currentTemplateId = ref<number | null>(null);
 const currentRobotId = ref<number | null>(null);
 const currentApiUrl = ref('');
 const currentTemplateInfo = ref<Template | null>(null);
-const testResult = ref<any>(null);
+const testResult = ref<unknown | null>(null);
+const activeExampleTab = ref('curl');
 
 // 表单数据
 const testForm = reactive({
-  data: ''
+  data: '',
 });
 
 // 计算属性 - 按机器人类型分组
 const robotGroups = computed(() => {
   const groups = new Map();
-  
+
   robots.value.forEach(robot => {
     if (!groups.has(robot.robot_type)) {
       groups.set(robot.robot_type, {
         robot_type: robot.robot_type,
         robots: [],
-        templates: templates.value.filter(t => t.robot_type === robot.robot_type)
+        templates: templates.value.filter(t => t.robot_type === robot.robot_type),
       });
     }
     groups.get(robot.robot_type).robots.push(robot);
   });
-  
+
   return Array.from(groups.values());
 });
 
@@ -229,7 +292,12 @@ const robotGroups = computed(() => {
 const requestParams = [
   { name: 'title', type: 'string', required: false, description: '消息标题（可选）' },
   { name: 'content', type: 'string', required: true, description: '消息内容' },
-  { name: 'robot_name', type: 'string', required: false, description: '机器人名称（名称模式时必填）' }
+  {
+    name: 'robot_name',
+    type: 'string',
+    required: false,
+    description: '机器人名称（名称模式时必填）',
+  },
 ];
 
 const requestExample = `{
@@ -247,21 +315,222 @@ const responseExample = `{
   }
 }`;
 
+// 示例代码
+const curlExample = computed(() => {
+  if (!currentApiUrl.value) return '';
+  return `# 基本请求示例
+curl -X POST "${currentApiUrl.value}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "系统告警",
+    "content": "服务器CPU使用率过高，当前使用率: 85%",
+    "robot_name": "运维告警机器人"
+  }'
+
+# 简单消息示例  
+curl -X POST "${currentApiUrl.value}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "content": "这是一条测试消息"
+  }'`;
+});
+
+const pythonExample = computed(() => {
+  if (!currentApiUrl.value) return '';
+  return `import requests
+import json
+
+# 接口地址
+url = "${currentApiUrl.value}"
+
+# 请求数据
+data = {
+    "title": "系统告警",
+    "content": "服务器CPU使用率过高，当前使用率: 85%",
+    "robot_name": "运维告警机器人"
+}
+
+# 发送请求
+response = requests.post(
+    url,
+    headers={"Content-Type": "application/json"},
+    json=data
+)
+
+# 处理响应
+if response.status_code == 200:
+    result = response.json()
+    print(f"发送成功: {result}")
+else:
+    print(f"发送失败: {response.text}")
+
+# 简单消息发送函数
+def send_message(content, title=None):
+    payload = {"content": content}
+    if title:
+        payload["title"] = title
+    
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"发送消息失败: {e}")
+        return None
+
+# 使用示例
+send_message("这是一条测试消息", "测试标题")`;
+});
+
+const javascriptExample = computed(() => {
+  if (!currentApiUrl.value) return '';
+  return `// 使用 fetch API 发送消息
+const apiUrl = "${currentApiUrl.value}";
+
+// 发送消息函数
+async function sendMessage(content, title = null, robotName = null) {
+    const data = { content };
+    if (title) data.title = title;
+    if (robotName) data.robot_name = robotName;
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error(\`HTTP error! status: \${response.status}\`);
+        }
+
+        const result = await response.json();
+        console.log('发送成功:', result);
+        return result;
+    } catch (_error) {
+        console.error('发送失败:', _error);
+        throw error;
+    }
+}
+
+// 使用示例
+sendMessage(
+    "服务器CPU使用率过高，当前使用率: 85%",
+    "系统告警",
+    "运维告警机器人"
+);
+
+// jQuery 示例
+$.ajax({
+    url: apiUrl,
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({
+        title: "系统告警",
+        content: "服务器CPU使用率过高"
+    }),
+    success: function(response) {
+        console.log('发送成功:', response);
+    },
+    error: function(xhr, status, error) {
+        console.error('发送失败:', _error);
+    }
+});`;
+});
+
+const alertmanagerExample = computed(() => {
+  if (!currentApiUrl.value) return '';
+  return `# AlertManager 配置示例
+# 在 alertmanager.yml 中配置
+global:
+  smtp_smarthost: 'localhost:587'
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'webhook'
+
+receivers:
+- name: 'webhook'
+  webhook_configs:
+  - url: '${currentApiUrl.value}'
+    send_resolved: true
+    http_config:
+      timeout: 10s
+    title: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    text: |
+      {{ range .Alerts }}
+      告警名称: {{ .Labels.alertname }}
+      实例: {{ .Labels.instance }}
+      描述: {{ .Annotations.description }}
+      状态: {{ .Status }}
+      {{ end }}`;
+});
+
+const scriptExample = computed(() => {
+  if (!currentApiUrl.value) return '';
+  return `#!/bin/bash
+# 系统监控脚本示例
+
+API_URL="${currentApiUrl.value}"
+
+# 检查CPU使用率
+check_cpu() {
+    cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
+    if (( $(echo "$cpu_usage > 80" | bc -l) )); then
+        send_alert "CPU告警" "CPU使用率过高: $cpu_usage%"
+    fi
+}
+
+# 检查内存使用率
+check_memory() {
+    mem_usage=$(free | grep Mem | awk '{printf("%.2f", $3/$2 * 100.0)}')
+    if (( $(echo "$mem_usage > 80" | bc -l) )); then
+        send_alert "内存告警" "内存使用率过高: $mem_usage%"
+    fi
+}
+
+# 发送告警消息
+send_alert() {
+    local title="$1"
+    local content="$2"
+    
+    curl -X POST "$API_URL" \\
+        -H "Content-Type: application/json" \\
+        -d "{
+            \\"title\\": \\"$title\\",
+            \\"content\\": \\"$content\\",
+            \\"robot_name\\": \\"运维告警机器人\\"
+        }"
+}
+
+# 执行检查
+check_cpu
+check_memory
+
+# 定时任务示例 (crontab -e)
+# */5 * * * * /path/to/monitor.sh`;
+});
+
 // 工具方法
 const getRobotTypeName = (type: string) => {
   const typeMap: Record<string, string> = {
-    'wechat': '企业微信',
-    'feishu': '飞书',
-    'dingtalk': '钉钉'
+    wechat: '企业微信',
+    feishu: '飞书',
+    dingtalk: '钉钉',
   };
   return typeMap[type] || type;
 };
 
 const getRobotTypeTagType = (type: string) => {
   const typeMap: Record<string, string> = {
-    'wechat': 'success',
-    'feishu': 'warning',
-    'dingtalk': 'info'
+    wechat: 'success',
+    feishu: 'warning',
+    dingtalk: 'info',
   };
   return typeMap[type] || 'info';
 };
@@ -272,7 +541,7 @@ const getTemplatesForRobot = (robot: Robot, templates: Template[]) => {
     template_name: template.name,
     robot_id: robot.id,
     robot_name: robot.name,
-    robot_type: robot.robot_type
+    robot_type: robot.robot_type,
   }));
 };
 
@@ -293,13 +562,13 @@ const fetchData = async () => {
   try {
     const [robotsResponse, templatesResponse] = await Promise.all([
       robotApi.getRobots(),
-      templateApi.getTemplates()
+      templateApi.getTemplates(),
     ]);
-    
+
     robots.value = robotsResponse.data.results || robotsResponse.data;
     templates.value = templatesResponse.data.results || templatesResponse.data;
-  } catch (error) {
-    console.error('获取数据失败:', error);
+  } catch (_error) {
+    console.error('获取数据失败:', _error);
     ElMessage.error('获取数据失败');
   } finally {
     loading.value = false;
@@ -312,7 +581,7 @@ const copyApiUrl = async (templateId: number, robotId: number) => {
     const url = getApiUrl(templateId, robotId);
     await navigator.clipboard.writeText(url);
     ElMessage.success('接口地址已复制到剪贴板');
-  } catch (error) {
+  } catch (_error) {
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -322,7 +591,7 @@ const copyApiUrlByName = async (templateId: number) => {
     const url = getApiUrlByName(templateId);
     await navigator.clipboard.writeText(url);
     ElMessage.success('接口地址已复制到剪贴板');
-  } catch (error) {
+  } catch (_error) {
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -332,8 +601,8 @@ const fetchTemplateInfo = async (templateId: number) => {
   try {
     const response = await templateApi.getTemplate(templateId);
     return response.data;
-  } catch (error) {
-    console.error('获取模板信息失败:', error);
+  } catch (_error) {
+    console.error('获取模板信息失败:', _error);
     return null;
   }
 };
@@ -343,7 +612,7 @@ const showApiDocs = async (templateId: number, robotId: number) => {
   currentTemplateId.value = templateId;
   currentRobotId.value = robotId;
   currentApiUrl.value = getApiUrl(templateId, robotId);
-  
+
   const info = await fetchTemplateInfo(templateId);
   if (info) {
     currentTemplateInfo.value = info;
@@ -356,16 +625,34 @@ const testApi = async (templateId: number, robotId: number) => {
   currentTemplateId.value = templateId;
   currentRobotId.value = robotId;
   currentApiUrl.value = getApiUrl(templateId, robotId);
-  
+
   const info = await fetchTemplateInfo(templateId);
   if (info) {
     currentTemplateInfo.value = info;
-    testForm.data = JSON.stringify({
-      title: "测试消息",
-      content: "这是一条测试消息"
-    }, null, 2);
+    testForm.data = JSON.stringify(
+      {
+        title: '测试消息',
+        content: '这是一条测试消息',
+      },
+      null,
+      2
+    );
     testResult.value = null;
     showTestDialog.value = true;
+  }
+};
+
+// 查看示例
+const viewExamples = async (templateId: number, robotId: number) => {
+  currentTemplateId.value = templateId;
+  currentRobotId.value = robotId;
+  currentApiUrl.value = getApiUrl(templateId, robotId);
+
+  const info = await fetchTemplateInfo(templateId);
+  if (info) {
+    currentTemplateInfo.value = info;
+    activeExampleTab.value = 'curl';
+    showExamplesDialog.value = true;
   }
 };
 
@@ -382,20 +669,20 @@ const executeTest = async () => {
     const response = await fetch(currentApiUrl.value, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    
+
     const result = await response.json();
     testResult.value = {
       success: response.ok,
-      response: JSON.stringify(result, null, 2)
+      response: JSON.stringify(result, null, 2),
     };
-  } catch (error) {
+  } catch (_error) {
     testResult.value = {
       success: false,
-      response: `请求失败: ${error}`
+      response: `请求失败: ${_error}`,
     };
   } finally {
     testLoading.value = false;
@@ -410,7 +697,8 @@ onMounted(() => {
 
 <style scoped>
 .api-list-container {
-  padding: 20px;
+  padding: 0;
+  width: 100%;
 }
 
 .card-header {

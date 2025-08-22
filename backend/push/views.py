@@ -1,12 +1,24 @@
 import json
 import re
 import logging
+import base64
+import io
+import random
+import string
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status, permissions
+from django.core.cache import cache
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from rest_framework import viewsets, status, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import HttpResponse
+from captcha.image import ImageCaptcha
+from PIL import Image
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import Template, Robot, MessageLog, RobotType, DistributionRule, InstanceMapping, AlertRecord, DistributionChannel
 from .serializers import (
@@ -17,6 +29,150 @@ from .serializers import (
 from .services import MessagePushService
 
 logger = logging.getLogger(__name__)
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """自定义JWT序列化器，添加上次登录时间和验证码验证"""
+    
+    captcha_key = serializers.CharField(required=True, help_text="验证码key")
+    captcha_input = serializers.CharField(required=True, help_text="验证码输入")
+    
+    def validate(self, attrs):
+        # 先验证验证码
+        captcha_key = attrs.get('captcha_key')
+        captcha_input = attrs.get('captcha_input', '').lower()
+        
+        if not captcha_key or not captcha_input:
+            raise serializers.ValidationError('验证码参数不完整')
+        
+        # 从缓存中获取验证码
+        cached_captcha = cache.get(f'captcha_{captcha_key}')
+        
+        if not cached_captcha:
+            raise serializers.ValidationError('验证码已过期，请重新获取')
+        
+        # 验证码验证
+        if captcha_input != cached_captcha:
+            raise serializers.ValidationError('验证码错误')
+        
+        # 验证成功后删除缓存
+        cache.delete(f'captcha_{captcha_key}')
+        
+        # 移除验证码相关字段，避免传递给父类
+        attrs_copy = attrs.copy()
+        attrs_copy.pop('captcha_key', None)
+        attrs_copy.pop('captcha_input', None)
+        
+        # 调用父类验证用户名密码
+        data = super().validate(attrs_copy)
+        
+        # 获取用户对象
+        user = self.user
+        
+        # 获取上次登录时间
+        last_login = user.last_login
+        if last_login:
+            data['last_login'] = last_login.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            data['last_login'] = None
+            
+        # 更新last_login字段为当前时间
+        user.last_login = timezone.now()
+        user.save()
+        
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """自定义JWT Token获取视图"""
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+class CaptchaAPIView(APIView):
+    """验证码API"""
+    permission_classes = []  # 不需要认证
+    
+    def get(self, request):
+        """生成验证码"""
+        try:
+            # 定义可用字符，排除容易混淆的0、2、D、I、O
+            available_chars = ''.join([
+                c for c in string.ascii_uppercase + string.digits 
+                if c not in ['0', '2', 'D', 'I', 'O', '8', 'B']
+            ])
+            
+            # 生成随机验证码文本（4位字母+数字，排除0、2、D、I、O）
+            captcha_text = ''.join(random.choices(available_chars, k=4))
+            
+            # 创建验证码图片
+            image = ImageCaptcha(width=120, height=50)
+            data = image.generate(captcha_text)
+            
+            # 转换为base64
+            image_base64 = base64.b64encode(data.getvalue()).decode('utf-8')
+            
+            # 生成唯一的key
+            captcha_key = ''.join(random.choices(string.ascii_lowercase + string.digits, k=32))
+            
+            # 将验证码文本存储到缓存中，5分钟过期
+            cache.set(f'captcha_{captcha_key}', captcha_text.lower(), 300)
+            
+            return Response({
+                'success': True,
+                'data': {
+                    'captcha_key': captcha_key,
+                    'captcha_image': f'data:image/png;base64,{image_base64}'
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"生成验证码失败: {str(e)}")
+            return Response({
+                'success': False,
+                'message': '生成验证码失败'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def post(self, request):
+        """验证验证码"""
+        try:
+            captcha_key = request.data.get('captcha_key')
+            captcha_input = request.data.get('captcha_input', '').lower()
+            
+            if not captcha_key or not captcha_input:
+                return Response({
+                    'success': False,
+                    'message': '验证码参数不完整'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 从缓存中获取验证码
+            cached_captcha = cache.get(f'captcha_{captcha_key}')
+            
+            if not cached_captcha:
+                return Response({
+                    'success': False,
+                    'message': '验证码已过期，请重新获取'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 验证码验证
+            if captcha_input == cached_captcha:
+                # 验证成功后删除缓存
+                cache.delete(f'captcha_{captcha_key}')
+                return Response({
+                    'success': True,
+                    'message': '验证码验证成功'
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'message': '验证码错误'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            logger.error(f"验证验证码失败: {str(e)}")
+            return Response({
+                'success': False,
+                'message': '验证验证码失败'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class TemplateViewSet(viewsets.ModelViewSet):

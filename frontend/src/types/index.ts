@@ -8,20 +8,20 @@ export interface User {
 }
 
 // 机器人类型枚举
-export const RobotType = {
+export const RobotTypeEnum = {
   WECHAT: 'wechat',
   FEISHU: 'feishu',
-  DINGTALK: 'dingtalk'
+  DINGTALK: 'dingtalk',
 } as const;
 
 // 类型定义
-export type RobotType = typeof RobotType[keyof typeof RobotType];
+export type RobotType = (typeof RobotTypeEnum)[keyof typeof RobotTypeEnum];
 
 // 机器人类型名称映射
 export const RobotTypeNames = {
-  [RobotType.WECHAT]: '企业微信',
-  [RobotType.FEISHU]: '飞书',
-  [RobotType.DINGTALK]: '钉钉',
+  [RobotTypeEnum.WECHAT]: '企业微信',
+  [RobotTypeEnum.FEISHU]: '飞书',
+  [RobotTypeEnum.DINGTALK]: '钉钉',
 };
 
 // 模板类型
@@ -78,7 +78,7 @@ export interface Pagination {
 export interface PushMessageParams {
   template_id: number;
   robot_id: number;
-  content: Record<string, any>;
+  content: Record<string, unknown>;
 }
 
 // 分发规则类型
@@ -87,8 +87,8 @@ export interface DistributionRule {
   name: string;
   type: 'json' | 'string';
   description: string;
-  extract_path?: string;        // JSON模式的提取路径
-  extract_pattern?: string;     // 字符串模式的提取模式
+  extract_path?: string; // JSON模式的提取路径
+  extract_pattern?: string; // 字符串模式的提取模式
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -116,12 +116,12 @@ export interface DistributionChannel {
 export interface InstanceMapping {
   id: number;
   instance_name: string;
-  channel_ids?: number[];      // 关联的分发通道ID列表
-  channel_names?: string[];    // 关联的分发通道名称列表
-  channel_count?: number;      // 关联的分发通道数量
-  robot_ids?: number[];        // 关联的机器人ID列表（保持向后兼容）
-  robot_names?: string[];      // 关联的机器人名称列表（保持向后兼容）
-  robot_count?: number;        // 关联的机器人数量（保持向后兼容）
+  channel_ids?: number[]; // 关联的分发通道ID列表
+  channel_names?: string[]; // 关联的分发通道名称列表
+  channel_count?: number; // 关联的分发通道数量
+  robot_ids?: number[]; // 关联的机器人ID列表（保持向后兼容）
+  robot_names?: string[]; // 关联的机器人名称列表（保持向后兼容）
+  robot_count?: number; // 关联的机器人数量（保持向后兼容）
   source_rule?: string;
   alert_count: number;
   last_alert_time?: string;
@@ -143,7 +143,7 @@ export interface DistributionConfig {
   id?: number;
   rule: number;
   robot: number;
-  conditions?: Record<string, any>;
+  conditions?: Record<string, unknown>;
   priority: number;
   is_active: boolean;
 }

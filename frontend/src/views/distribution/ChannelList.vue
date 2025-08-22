@@ -28,15 +28,12 @@
         </el-table-column>
         <el-table-column prop="is_active" label="状态" width="100" align="center">
           <template #default="scope">
-            <el-switch
-              v-model="scope.row.is_active"
-              @change="toggleChannelStatus(scope.row)"
-            />
+            <el-switch v-model="scope.row.is_active" @change="toggleChannelStatus(scope.row)" />
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.created_at) }}
+            {{ formatToLocalTime(scope.row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
@@ -101,10 +98,10 @@
             >
               <div class="robot-option">
                 <span>{{ robot.name }}</span>
-                <el-tag 
-                  :type="getRobotTypeTagType(robot.robot_type)" 
+                <el-tag
+                  :type="getRobotTypeTagType(robot.robot_type)"
                   size="small"
-                  style="margin-left: 8px;"
+                  style="margin-left: 8px"
                 >
                   {{ getRobotTypeLabel(robot.robot_type) }}
                 </el-tag>
@@ -129,7 +126,7 @@
             >
               <div class="template-option">
                 <span>{{ template.name }}</span>
-                <el-tag type="info" size="small" style="margin-left: 8px;">
+                <el-tag type="info" size="small" style="margin-left: 8px">
                   {{ getRobotTypeLabel(template.robot_type) }}
                 </el-tag>
               </div>
@@ -174,6 +171,7 @@ import { Plus, Edit, Delete, InfoFilled } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { distributionApi, robotApi, templateApi } from '../../api';
 import type { DistributionChannel, Robot, Template } from '../../types';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 响应式数据
 const loading = ref(false);
@@ -196,52 +194,41 @@ const channelForm = reactive<Partial<DistributionChannel>>({
   robot: undefined,
   template: undefined,
   description: '',
-  is_active: true
+  is_active: true,
 });
 
 const channelFormRules: FormRules = {
-  name: [
-    { required: true, message: '请输入通道名称', trigger: 'blur' }
-  ],
-  robot: [
-    { required: true, message: '请选择机器人', trigger: 'change' }
-  ],
-  template: [
-    { required: true, message: '请选择模板', trigger: 'change' }
-  ]
+  name: [{ required: true, message: '请输入通道名称', trigger: 'blur' }],
+  robot: [{ required: true, message: '请选择机器人', trigger: 'change' }],
+  template: [{ required: true, message: '请选择模板', trigger: 'change' }],
 };
 
 // 计算属性 - 根据选中的机器人筛选模板
 const filteredTemplates = computed(() => {
   if (!channelForm.robot) return [];
-  
+
   const selectedRobot = robots.value.find(r => r.id === channelForm.robot);
   if (!selectedRobot) return [];
-  
+
   return templates.value.filter(t => t.robot_type === selectedRobot.robot_type);
 });
 
-// 工具方法
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString('zh-CN');
-};
-
 const getRobotTypeLabel = (robotType: string) => {
   const typeMap: Record<string, string> = {
-    'dingtalk': '钉钉',
-    'wechat': '企业微信',
-    'feishu': '飞书',
-    'webhook': 'Webhook'
+    dingtalk: '钉钉',
+    wechat: '企业微信',
+    feishu: '飞书',
+    webhook: 'Webhook',
   };
   return typeMap[robotType] || robotType;
 };
 
 const getRobotTypeTagType = (robotType: string) => {
   const typeMap: Record<string, string> = {
-    'dingtalk': 'primary',
-    'wechat': 'success',
-    'feishu': 'warning',
-    'webhook': 'info'
+    dingtalk: 'primary',
+    wechat: 'success',
+    feishu: 'warning',
+    webhook: 'info',
   };
   return typeMap[robotType] || 'info';
 };
@@ -252,13 +239,13 @@ const fetchChannels = async () => {
   try {
     const response = await distributionApi.getChannels({
       page: currentPage.value,
-      page_size: pageSize.value
+      page_size: pageSize.value,
     });
-    
+
     channels.value = response.data.results || response.data;
     total.value = response.data.count || response.data.length;
-  } catch (error) {
-    console.error('获取分发通道列表失败:', error);
+  } catch (_error) {
+    // console.error('获取分发通道列表失败:', _error);
     ElMessage.error('获取分发通道列表失败');
   } finally {
     loading.value = false;
@@ -269,8 +256,8 @@ const fetchRobots = async () => {
   try {
     const response = await robotApi.getRobots();
     robots.value = response.data.results || response.data;
-  } catch (error) {
-    console.error('获取机器人列表失败:', error);
+  } catch (_error) {
+    // console.error('获取机器人列表失败:', _error);
     ElMessage.error('获取机器人列表失败');
   }
 };
@@ -279,8 +266,8 @@ const fetchTemplates = async () => {
   try {
     const response = await templateApi.getTemplates();
     templates.value = response.data.results || response.data;
-  } catch (error) {
-    console.error('获取模板列表失败:', error);
+  } catch (_error) {
+    // console.error('获取模板列表失败:', _error);
     ElMessage.error('获取模板列表失败');
   }
 };
@@ -312,7 +299,7 @@ const resetForm = () => {
     robot: undefined,
     template: undefined,
     description: '',
-    is_active: true
+    is_active: true,
   });
 };
 
@@ -325,11 +312,11 @@ const onRobotChange = () => {
 // 保存通道
 const saveChannel = async () => {
   if (!channelFormRef.value) return;
-  
+
   try {
     await channelFormRef.value.validate();
     saving.value = true;
-    
+
     if (editingChannel.value) {
       await distributionApi.updateChannel(editingChannel.value.id!, channelForm);
       ElMessage.success('通道更新成功');
@@ -337,11 +324,11 @@ const saveChannel = async () => {
       await distributionApi.createChannel(channelForm);
       ElMessage.success('通道创建成功');
     }
-    
+
     handleDialogClose();
     fetchChannels();
-  } catch (error) {
-    console.error('保存通道失败:', error);
+  } catch (_error) {
+    // console.error('保存通道失败:', _error);
     ElMessage.error('保存通道失败');
   } finally {
     saving.value = false;
@@ -356,7 +343,7 @@ const editChannel = (channel: DistributionChannel) => {
     robot: channel.robot,
     template: channel.template,
     description: channel.description,
-    is_active: channel.is_active
+    is_active: channel.is_active,
   });
   showCreateDialog.value = true;
 };
@@ -365,15 +352,15 @@ const editChannel = (channel: DistributionChannel) => {
 const deleteChannel = async (channel: DistributionChannel) => {
   try {
     await ElMessageBox.confirm('确定要删除此通道吗？', '确认删除', {
-      type: 'warning'
+      type: 'warning',
     });
-    
+
     await distributionApi.deleteChannel(channel.id!);
     ElMessage.success('删除成功');
     fetchChannels();
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除失败:', error);
+  } catch (_error) {
+    if (_error !== 'cancel') {
+      // console.error('删除失败:', _error);
       ElMessage.error('删除失败');
     }
   }
@@ -384,9 +371,9 @@ const toggleChannelStatus = async (channel: DistributionChannel) => {
   try {
     await distributionApi.updateChannel(channel.id!, { is_active: channel.is_active });
     ElMessage.success('状态更新成功');
-  } catch (error) {
+  } catch (_error) {
     channel.is_active = !channel.is_active; // 回滚状态
-    console.error('状态更新失败:', error);
+    // console.error('状态更新失败:', _error);
     ElMessage.error('状态更新失败');
   }
 };
@@ -422,7 +409,8 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.robot-option, .template-option {
+.robot-option,
+.template-option {
   display: flex;
   align-items: center;
   justify-content: space-between;

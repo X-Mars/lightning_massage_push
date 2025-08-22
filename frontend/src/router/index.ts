@@ -17,11 +17,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
-    meta: { 
+    meta: {
       requiresAuth: false,
       title: '登录',
-      showInMenu: false
-    }
+      showInMenu: false,
+    },
   },
   {
     path: '/',
@@ -35,8 +35,8 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '仪表盘',
           icon: 'DataLine',
-          showInMenu: true
-        }
+          showInMenu: true,
+        },
       },
       {
         path: 'interface',
@@ -45,7 +45,7 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '消息接口',
           icon: 'Connection',
-          showInMenu: true
+          showInMenu: true,
         },
         children: [
           {
@@ -56,8 +56,8 @@ const routes: Array<RouteRecordRaw> = [
               title: '基本消息接口',
               icon: 'ChatDotRound',
               showInMenu: true,
-              parent: 'Interface'
-            }
+              parent: 'Interface',
+            },
           },
           {
             path: 'distribution',
@@ -67,10 +67,10 @@ const routes: Array<RouteRecordRaw> = [
               title: '高级分发接口',
               icon: 'Operation',
               showInMenu: true,
-              parent: 'Interface'
-            }
-          }
-        ]
+              parent: 'Interface',
+            },
+          },
+        ],
       },
       {
         path: 'templates',
@@ -79,8 +79,8 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '消息模板',
           icon: 'Document',
-          showInMenu: true
-        }
+          showInMenu: true,
+        },
       },
       {
         path: 'robots',
@@ -89,8 +89,8 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '机器人配置',
           icon: 'SetUp',
-          showInMenu: true
-        }
+          showInMenu: true,
+        },
       },
       {
         path: 'messages',
@@ -99,8 +99,8 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '消息日志',
           icon: 'ChatDotRound',
-          showInMenu: true
-        }
+          showInMenu: true,
+        },
       },
       {
         path: 'push',
@@ -109,8 +109,8 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '发送消息',
           icon: 'Promotion',
-          showInMenu: true
-        }
+          showInMenu: true,
+        },
       },
       {
         path: 'prometheus',
@@ -119,7 +119,7 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: 'Prometheus',
           icon: 'Monitor',
-          showInMenu: true
+          showInMenu: true,
         },
         children: [
           {
@@ -130,8 +130,8 @@ const routes: Array<RouteRecordRaw> = [
               title: '告警记录',
               icon: 'Warning',
               showInMenu: true,
-              parent: 'Prometheus'
-            }
+              parent: 'Prometheus',
+            },
           },
           {
             path: 'namespaces',
@@ -141,10 +141,10 @@ const routes: Array<RouteRecordRaw> = [
               title: '命名空间',
               icon: 'FolderOpened',
               showInMenu: true,
-              parent: 'Prometheus'
-            }
-          }
-        ]
+              parent: 'Prometheus',
+            },
+          },
+        ],
       },
       {
         path: 'distribution',
@@ -153,7 +153,7 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           title: '高级分发',
           icon: 'Operation',
-          showInMenu: true
+          showInMenu: true,
         },
         children: [
           {
@@ -164,8 +164,8 @@ const routes: Array<RouteRecordRaw> = [
               title: '分发规则',
               icon: 'EditPen',
               showInMenu: true,
-              parent: 'Distribution'
-            }
+              parent: 'Distribution',
+            },
           },
           {
             path: 'channels',
@@ -175,8 +175,8 @@ const routes: Array<RouteRecordRaw> = [
               title: '分发通道',
               icon: 'Connection',
               showInMenu: true,
-              parent: 'Distribution'
-            }
+              parent: 'Distribution',
+            },
           },
           {
             path: 'mapping',
@@ -186,28 +186,28 @@ const routes: Array<RouteRecordRaw> = [
               title: '分发绑定',
               icon: 'Setting',
               showInMenu: true,
-              parent: 'Distribution'
-            }
-          }
-        ]
-      }
-    ]
+              parent: 'Distribution',
+            },
+          },
+        ],
+      },
+    ],
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/'
-  }
+    redirect: '/',
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 });
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
+
   if (requiresAuth && !authStore.isLoggedIn) {
     next('/login');
   } else {

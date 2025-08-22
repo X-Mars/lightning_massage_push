@@ -9,7 +9,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm">
@@ -17,7 +17,12 @@
             <el-input v-model="searchForm.name" placeholder="输入模板名称搜索" clearable />
           </el-form-item>
           <el-form-item label="机器人类型">
-            <el-select v-model="searchForm.robot_type" placeholder="请选择" style="width: 200px" clearable>
+            <el-select
+              v-model="searchForm.robot_type"
+              placeholder="请选择"
+              style="width: 200px"
+              clearable
+            >
               <el-option
                 v-for="(name, type) in RobotTypeNames"
                 :key="type"
@@ -32,12 +37,12 @@
           </el-form-item>
         </el-form>
       </div>
-      
+
       <!-- 表格区域 -->
-      <el-table 
-        v-loading="loading" 
-        :data="filteredTemplates" 
-        style="width: 100%" 
+      <el-table
+        v-loading="loading"
+        :data="filteredTemplates"
+        style="width: 100%"
         border
         row-key="id"
       >
@@ -49,7 +54,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="updated_at" label="更新时间" width="180" />
+        <el-table-column prop="updated_at" label="更新时间" width="180">
+          <template #default="scope">
+            {{ formatToLocalTime(scope.row.updated_at) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" @click="handleEditTemplate(scope.row)">
@@ -64,7 +73,7 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页区域 -->
       <div class="pagination-container">
         <el-pagination
@@ -78,13 +87,9 @@
         />
       </div>
     </el-card>
-    
+
     <!-- 预览对话框 -->
-    <el-dialog
-      v-model="previewDialogVisible"
-      title="模板预览"
-      width="80%"
-    >
+    <el-dialog v-model="previewDialogVisible" title="模板预览" width="80%">
       <div class="preview-dialog-container">
         <el-row :gutter="20">
           <!-- 左侧：模板内容和测试数据 -->
@@ -93,7 +98,10 @@
               <div class="preview-section">
                 <div class="preview-section-header">
                   <h4>模板内容</h4>
-                  <el-tag :type="getRobotTypeTagType(currentPreviewTemplate?.robot_type || '')" size="small">
+                  <el-tag
+                    :type="getRobotTypeTagType(currentPreviewTemplate?.robot_type || '')"
+                    size="small"
+                  >
                     {{ getRobotTypeName(currentPreviewTemplate?.robot_type || '') }}
                   </el-tag>
                 </div>
@@ -101,7 +109,7 @@
                   <pre>{{ currentPreviewTemplate?.content }}</pre>
                 </div>
               </div>
-              
+
               <div class="preview-section">
                 <div class="preview-section-header">
                   <h4>测试数据</h4>
@@ -118,7 +126,7 @@
               </div>
             </div>
           </el-col>
-          
+
           <!-- 右侧：预览结果 -->
           <el-col :span="12">
             <div class="preview-right-panel">
@@ -129,17 +137,24 @@
                     渲染预览
                   </el-button>
                 </div>
-                
+
                 <!-- 根据机器人类型使用不同的预览方式 -->
                 <div class="preview-result-container">
                   <!-- 对于企业微信和钉钉，使用 md-editor-v3 渲染 markdown -->
-                  <div v-if="currentPreviewTemplate && isMarkdownRobotType(currentPreviewTemplate.robot_type) && previewDialogMarkdownContent" class="markdown-preview">
-                    <MdPreview 
-                      :modelValue="previewDialogMarkdownContent" 
+                  <div
+                    v-if="
+                      currentPreviewTemplate &&
+                      isMarkdownRobotType(currentPreviewTemplate.robot_type) &&
+                      previewDialogMarkdownContent
+                    "
+                    class="markdown-preview"
+                  >
+                    <MdPreview
+                      :modelValue="previewDialogMarkdownContent"
                       :theme="'light'"
                       :codeTheme="'github'"
                       :showCodeRowNumber="false"
-                      style="background-color: transparent;"
+                      style="background-color: transparent"
                     />
                   </div>
                   <!-- 其他情况使用原有的 HTML 渲染 -->
@@ -151,7 +166,7 @@
         </el-row>
       </div>
     </el-dialog>
-    
+
     <!-- 创建/编辑模板对话框 -->
     <el-dialog
       v-model="formDialogVisible"
@@ -159,7 +174,7 @@
       width="70%"
       :before-close="handleDialogClose"
     >
-      <el-form 
+      <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
@@ -174,7 +189,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="适用机器人类型" prop="robot_type">
-              <el-select v-model="form.robot_type" placeholder="请选择机器人类型" style="width: 100%" @change="renderLivePreview">
+              <el-select
+                v-model="form.robot_type"
+                placeholder="请选择机器人类型"
+                style="width: 100%"
+                @change="renderLivePreview"
+              >
                 <el-option
                   v-for="(name, type) in RobotTypeNames"
                   :key="type"
@@ -185,7 +205,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-form-item label="模板内容" prop="content">
           <el-row :gutter="20">
             <!-- 左侧编辑器 -->
@@ -193,7 +213,8 @@
               <div class="editor-container">
                 <div class="editor-header">
                   <span class="editor-tips">
-                    支持Jinja2语法：变量 <code v-pre>{{ variable }}</code>，循环 <code v-pre>{% for item in items %}...{% endfor %}</code>等等
+                    支持Jinja2语法：变量 <code v-pre>{{ variable }}</code
+                    >，循环 <code v-pre>{% for item in items %}...{% endfor %}</code>等等
                     <!-- <template v-if="isMarkdownRobotType(form.robot_type)">
                       支持Markdown语法和Jinja2模板：变量 <code v-pre>{{ variable }}</code>，循环 <code v-pre>{% for item in items %}...{% endfor %}</code>，条件 <code v-pre>{% if condition %}...{% endif %}</code>
                     </template>
@@ -202,34 +223,64 @@
                     </template> -->
                   </span>
                 </div>
-                
+
                 <!-- 对于企业微信和钉钉，使用 md-editor-v3 编辑器 -->
                 <div v-if="isMarkdownRobotType(form.robot_type)" class="markdown-editor">
-                  <MdEditor 
+                  <MdEditor
                     v-model="form.content"
                     :preview="false"
-                    :toolbars="['bold', 'underline', 'italic', '-', 'title', 'strikeThrough', 'sub', 'sup', 'quote', 'unorderedList', 'orderedList', 'task', '-', 'codeRow', 'code', 'link', 'image', 'table', 'mermaid', 'katex', '-', 'revoke', 'next', 'save', '=', 'pageFullscreen', 'fullscreen', 'htmlPreview', 'catalog']"
+                    :toolbars="[
+                      'bold',
+                      'underline',
+                      'italic',
+                      '-',
+                      'title',
+                      'strikeThrough',
+                      'sub',
+                      'sup',
+                      'quote',
+                      'unorderedList',
+                      'orderedList',
+                      'task',
+                      '-',
+                      'codeRow',
+                      'code',
+                      'link',
+                      'image',
+                      'table',
+                      'mermaid',
+                      'katex',
+                      '-',
+                      'revoke',
+                      'next',
+                      'save',
+                      '=',
+                      'pageFullscreen',
+                      'fullscreen',
+                      'htmlPreview',
+                      'catalog',
+                    ]"
                     :theme="'light'"
                     :codeTheme="'github'"
                     :showCodeRowNumber="false"
                     placeholder="请输入Markdown模板内容，支持Jinja2语法"
                     @onChange="renderLivePreview"
-                    style="height: 400px;"
+                    style="height: 400px"
                   />
                 </div>
-                
+
                 <!-- 其他机器人类型使用普通文本编辑器 -->
-                <el-input 
+                <el-input
                   v-else
-                  v-model="form.content" 
-                  type="textarea" 
+                  v-model="form.content"
+                  type="textarea"
                   placeholder="请输入模板内容，支持Jinja2语法"
                   class="template-editor"
                   @change="renderLivePreview"
                 />
               </div>
             </el-col>
-            
+
             <!-- 右侧预览 -->
             <el-col :span="12">
               <div class="preview-container">
@@ -238,7 +289,12 @@
                   <div>
                     <el-form :inline="true" class="preview-controls">
                       <el-form-item label="测试数据">
-                        <el-select v-model="previewDataType" size="small" style="width: 150px" @change="renderLivePreview">
+                        <el-select
+                          v-model="previewDataType"
+                          size="small"
+                          style="width: 150px"
+                          @change="renderLivePreview"
+                        >
                           <el-option label="标准示例数据" value="standard" />
                           <el-option label="自定义数据" value="custom" />
                         </el-select>
@@ -246,7 +302,7 @@
                     </el-form>
                   </div>
                 </div>
-                
+
                 <div v-if="previewDataType === 'custom'" class="preview-data">
                   <el-input
                     v-model="formTestData"
@@ -256,7 +312,7 @@
                     @change="renderLivePreview"
                   />
                 </div>
-                
+
                 <div class="preview-output">
                   <div class="preview-type">
                     <!-- <el-tag :type="getRobotTypeTagType(form.robot_type)" effect="plain" v-if="form.robot_type">
@@ -265,13 +321,16 @@
                   </div>
                   <div class="preview-content-wrapper">
                     <!-- 对于企业微信和钉钉，使用 md-editor-v3 渲染 markdown -->
-                    <div v-if="isMarkdownRobotType(form.robot_type) && previewMarkdownContent" class="markdown-preview">
-                      <MdPreview 
-                        :modelValue="previewMarkdownContent" 
+                    <div
+                      v-if="isMarkdownRobotType(form.robot_type) && previewMarkdownContent"
+                      class="markdown-preview"
+                    >
+                      <MdPreview
+                        :modelValue="previewMarkdownContent"
                         :theme="'light'"
                         :codeTheme="'github'"
                         :showCodeRowNumber="false"
-                        style="background-color: transparent;"
+                        style="background-color: transparent"
                       />
                     </div>
                     <!-- 其他情况使用原有的 HTML 渲染 -->
@@ -283,7 +342,7 @@
           </el-row>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="handleDialogClose">取消</el-button>
@@ -293,7 +352,7 @@
         </span>
       </template>
     </el-dialog>
-    
+
     <!-- 不再需要单独的表单预览对话框 -->
   </div>
 </template>
@@ -301,7 +360,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useTemplateStore } from '../../stores/template';
-import { RobotType, RobotTypeNames } from '../../types';
+import { RobotTypeEnum, RobotTypeNames, type RobotType } from '../../types';
 import type { Template } from '../../types';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Edit, View, Delete } from '@element-plus/icons-vue';
@@ -310,6 +369,7 @@ import * as nunjucks from 'nunjucks';
 import { MdPreview, MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
 import 'md-editor-v3/lib/style.css';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 模板仓库
 const templateStore = useTemplateStore();
@@ -321,13 +381,14 @@ const templates = computed(() => templateStore.templates);
 // 搜索表单
 const searchForm = reactive({
   name: '',
-  robot_type: ''
+  robot_type: '',
 });
 
 // 过滤后的模板
 const filteredTemplates = computed(() => {
   return templates.value.filter(template => {
-    const nameMatch = !searchForm.name || template.name.toLowerCase().includes(searchForm.name.toLowerCase());
+    const nameMatch =
+      !searchForm.name || template.name.toLowerCase().includes(searchForm.name.toLowerCase());
     const typeMatch = !searchForm.robot_type || template.robot_type === searchForm.robot_type;
     return nameMatch && typeMatch;
   });
@@ -341,7 +402,9 @@ const totalTemplates = ref(0); // 后端分页时的总数
 // 预览相关
 const previewDialogVisible = ref(false);
 const currentPreviewTemplate = ref<Template | null>(null);
-const testData = ref('{\n  "title": "测试标题",\n  "content": "测试内容",\n  "commonLabels": {\n    "alertname": "HighCPUUsage",\n    "instance": "server-01",\n    "severity": "warning",\n    "team": "ops"\n  },\n  "alerts": [\n    {\n      "labels": {\n        "alertname": "HighCPUUsage",\n        "instance": "server-01"\n      },\n      "annotations": {\n        "summary": "高CPU使用率",\n        "description": "CPU使用率超过80%"\n      },\n      "status": "firing"\n    }\n  ]\n}');
+const testData = ref(
+  '{\n  "title": "测试标题",\n  "content": "测试内容",\n  "commonLabels": {\n    "alertname": "HighCPUUsage",\n    "instance": "server-01",\n    "severity": "warning",\n    "team": "ops"\n  },\n  "alerts": [\n    {\n      "labels": {\n        "alertname": "HighCPUUsage",\n        "instance": "server-01"\n      },\n      "annotations": {\n        "summary": "高CPU使用率",\n        "description": "CPU使用率超过80%"\n      },\n      "status": "firing"\n    }\n  ]\n}'
+);
 const previewResult = ref('');
 const previewDialogMarkdownContent = ref(''); // 用于预览对话框的 md-editor-v3 markdown 内容
 
@@ -357,7 +420,7 @@ const form = reactive({
   name: '',
   description: '',
   content: '',
-  robot_type: '' as RobotType
+  robot_type: '' as RobotType,
 });
 
 // 表单预览相关
@@ -370,7 +433,7 @@ const previewMarkdownContent = ref(''); // 用于 md-editor-v3 的 markdown 内�
 const rules = reactive<FormRules>({
   name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
   robot_type: [{ required: true, message: '请选择机器人类型', trigger: 'change' }],
-  content: [{ required: true, message: '请输入模板内容', trigger: 'blur' }]
+  content: [{ required: true, message: '请输入模板内容', trigger: 'blur' }],
 });
 
 // 获取机器人类型标签样式
@@ -394,7 +457,7 @@ const getRobotTypeName = (type: string) => {
 
 // 判断是否为 Markdown 类型的机器人（企业微信和钉钉）
 const isMarkdownRobotType = (type: RobotType) => {
-  return type === RobotType.WECHAT || type === RobotType.DINGTALK;
+  return type === RobotTypeEnum.WECHAT || type === RobotTypeEnum.DINGTALK;
 };
 
 // 搜索处理
@@ -426,7 +489,7 @@ const handleCurrentChange = (val: number) => {
 const fetchTemplateData = async () => {
   const params = {
     page: currentPage.value,
-    page_size: pageSize.value
+    page_size: pageSize.value,
   };
   const result = await templateStore.fetchTemplates(params);
   if (result && result.total) {
@@ -449,13 +512,13 @@ const handleEditTemplate = (template: Template) => {
   resetForm();
   isEdit.value = true;
   currentEditId.value = template.id;
-  
+
   // 填充表单
   form.name = template.name;
   form.description = template.description || '';
   form.content = template.content;
   form.robot_type = template.robot_type;
-  
+
   formDialogVisible.value = true;
   // 延迟一下再渲染预览，确保表单已经填充
   setTimeout(() => renderLivePreview(), 100);
@@ -480,7 +543,7 @@ const handleDialogClose = () => {
     {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
     }
   )
     .then(() => {
@@ -494,22 +557,22 @@ const handleDialogClose = () => {
 // 提交表单
 const handleFormSubmit = async () => {
   if (!formRef.value) return;
-  
-  await formRef.value.validate(async (valid) => {
+
+  await formRef.value.validate(async valid => {
     if (valid) {
       formLoading.value = true;
       try {
         let success = false;
-        
+
         if (isEdit.value && currentEditId.value) {
           // 更新模板
           success = await templateStore.updateTemplate(currentEditId.value, {
             name: form.name,
             description: form.description,
             content: form.content,
-            robot_type: form.robot_type as RobotType
+            robot_type: form.robot_type as RobotType,
           });
-          
+
           if (success) {
             ElMessage.success('更新模板成功');
             formDialogVisible.value = false;
@@ -520,15 +583,15 @@ const handleFormSubmit = async () => {
             name: form.name,
             description: form.description,
             content: form.content,
-            robot_type: form.robot_type as RobotType
+            robot_type: form.robot_type as RobotType,
           });
-          
+
           if (success) {
             ElMessage.success('创建模板成功');
             formDialogVisible.value = false;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         ElMessage.error('操作失败，请重试');
       } finally {
         formLoading.value = false;
@@ -541,43 +604,45 @@ const handleFormSubmit = async () => {
 const renderContentByRobotType = (content: string, robotType: RobotType) => {
   try {
     // 企业微信和钉钉都使用Markdown格式，飞书使用富文本
-    if (robotType === RobotType.WECHAT || robotType === RobotType.DINGTALK) {
+    if (robotType === RobotTypeEnum.WECHAT || robotType === RobotTypeEnum.DINGTALK) {
       // 对于 markdown 机器人类型，我们将在组件中使用 md-editor-v3 来渲染
       // 这里返回原始内容，让 md-editor-v3 处理
       return content;
-    } else if (robotType === RobotType.FEISHU) {
+  } else if (robotType === RobotTypeEnum.FEISHU) {
       // 飞书的interactive卡片格式，目前简单处理
       // 1. 处理标题
       let processedContent = content
         .replace(/^### (.*$)/gm, '<h3>$1</h3>')
         .replace(/^## (.*$)/gm, '<h2>$1</h2>')
         .replace(/^# (.*$)/gm, '<h1>$1</h1>');
-      
+
       // 2. 处理列表
       processedContent = processedContent
         .replace(/^\* (.*$)/gm, '<ul><li>$1</li></ul>')
         .replace(/^- (.*$)/gm, '<ul><li>$1</li></ul>')
         .replace(/^(\d+)\. (.*$)/gm, '<ol><li>$2</li></ol>');
-      
+
       // 3. 处理粗体和斜体
       processedContent = processedContent
         .replace(/\*\*(.*)\*\*/gm, '<strong>$1</strong>')
         .replace(/\*(.*)\*/gm, '<em>$1</em>')
-        .replace(/\_(.*)\_/gm, '<em>$1</em>');
-      
+        .replace(/_(.*)_/gm, '<em>$1</em>');
+
       // 4. 处理链接
-      processedContent = processedContent
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/gm, '<a href="$2">$1</a>');
-      
+      processedContent = processedContent.replace(
+        /\[([^\]]+)\]\(([^)]+)\)/gm,
+        '<a href="$2">$1</a>'
+      );
+
       // 5. 处理换行
       processedContent = processedContent.replace(/\n/g, '<br>');
-      
+
       return processedContent;
     }
     // 默认情况下返回带换行的内容
     return content.replace(/\n/g, '<br>');
-  } catch (error) {
-    console.error('渲染内容时出错:', error);
+  } catch (_error) {
+    console.error('渲染内容时出错:', _error);
     // 发生错误时，至少确保换行可以正常工作
     return content.replace(/\n/g, '<br>');
   }
@@ -586,31 +651,34 @@ const renderContentByRobotType = (content: string, robotType: RobotType) => {
 // 初始化nunjucks环境
 const nunjucksEnv = new nunjucks.Environment(null, {
   autoescape: false,
-  throwOnUndefined: false // 防止未定义变量导致错误
+  throwOnUndefined: false, // 防止未定义变量导致错误
 });
 
 // 添加自定义过滤器支持字典遍历
-nunjucksEnv.addFilter('items', function(obj) {
+nunjucksEnv.addFilter('items', function (obj) {
   if (!obj || typeof obj !== 'object') return [];
   return Object.entries(obj).map(([key, value]) => ({ key, value }));
 });
 
 // 安全的模板渲染函数
-const safeRenderTemplate = (templateContent: string, data: any): string => {
+const safeRenderTemplate = (
+  templateContent: string,
+  data: Record<string, unknown>
+): string => {
   try {
     // 预处理模板，将 .items() 语法转换为 nunjucks 兼容的语法
     let processedTemplate = templateContent;
-    
+
     // 将 {% for key, value in dict.items() %} 转换为 {% for item in dict | items %}{% set key = item.key %}{% set value = item.value %}
     processedTemplate = processedTemplate.replace(
-      /\{\%\s*for\s+(\w+),\s*(\w+)\s+in\s+(\w+(?:\.\w+)*)\.items\(\)\s*\%\}/g,
+      /{%\s*for\s+(\w+),\s*(\w+)\s+in\s+(\w+(?:\.\w+)*)\.items\(\)\s*%}/g,
       '{% for item in $3 | items %}{% set $1 = item.key %}{% set $2 = item.value %}'
     );
-    
+
     return nunjucksEnv.renderString(processedTemplate, data);
-  } catch (error) {
-    console.warn('Nunjucks渲染失败:', error);
-    throw error;
+  } catch (_error) {
+    console.warn('Nunjucks渲染失败:', _error);
+    throw _error;
   }
 };
 
@@ -624,81 +692,81 @@ const renderLivePreview = () => {
   if (renderTimeout) {
     clearTimeout(renderTimeout);
   }
-  
+
   renderTimeout = setTimeout(() => {
     try {
       let data;
       if (previewDataType.value === 'standard') {
         // 使用标准示例数据，包含常用的Prometheus告警相关字段
-        data = { 
-          title: "测试标题", 
-          content: "测试内容",
+        data = {
+          title: '测试标题',
+          content: '测试内容',
           time: new Date().toLocaleString(),
-          status: "成功",
-          user: "系统管理员",
+          status: '成功',
+          user: '系统管理员',
           // 添加commonLabels对象，支持items()遍历
           commonLabels: {
-            alertname: "HighCPUUsage",
-            instance: "server-01",
-            severity: "warning",
-            team: "ops"
+            alertname: 'HighCPUUsage',
+            instance: 'server-01',
+            severity: 'warning',
+            team: 'ops',
           },
           // 添加其他常用字段
           alerts: [
-            { 
-              labels: { alertname: "HighCPUUsage", instance: "server-01" },
-              annotations: { summary: "高CPU使用率", description: "CPU使用率超过80%" },
-              status: "firing"
-            }
+            {
+              labels: { alertname: 'HighCPUUsage', instance: 'server-01' },
+              annotations: { summary: '高CPU使用率', description: 'CPU使用率超过80%' },
+              status: 'firing',
+            },
           ],
           items: [
-            { name: "项目1", value: "值1" },
-            { name: "项目2", value: "值2" },
-            { name: "项目3", value: "值3" }
-          ]
+            { name: '项目1', value: '值1' },
+            { name: '项目2', value: '值2' },
+            { name: '项目3', value: '值3' },
+          ],
         };
       } else {
         // 使用自定义数据
         data = JSON.parse(formTestData.value);
       }
-    
-    // 生成预览结果
-    if (form.content && form.robot_type) {
-      let previewContent = '';
-      
-      try {
-        // 使用安全的模板渲染函数
-        previewContent = safeRenderTemplate(form.content, data);
-      } catch (templateError) {
-        // 如果模板渲染失败，回退到简单的变量替换
-        console.warn('模板渲染失败，回退到简单变量替换:', templateError);
-        previewContent = form.content;
-        Object.keys(data).forEach(key => {
-          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-          previewContent = previewContent.replace(regex, data[key]);
-        });
-      }
-      
-      // 根据机器人类型设置预览内容
-      if (isMarkdownRobotType(form.robot_type)) {
-        // 对于企业微信和钉钉，设置 markdown 内容用于 md-editor-v3
-        previewMarkdownContent.value = previewContent;
-        formPreviewResult.value = ''; // 清空 HTML 预览
-      } else {
-        // 对于其他机器人类型，使用 HTML 渲染
-        const renderedContent = renderContentByRobotType(previewContent, form.robot_type);
-        formPreviewResult.value = `<div class="preview-formatted">
+
+      // 生成预览结果
+      if (form.content && form.robot_type) {
+        let previewContent = '';
+
+        try {
+          // 使用安全的模板渲染函数
+          previewContent = safeRenderTemplate(form.content, data);
+        } catch (templateError) {
+          // 如果模板渲染失败，回退到简单的变量替换
+          console.warn('模板渲染失败，回退到简单变量替换:', templateError);
+          previewContent = form.content;
+          Object.keys(data).forEach(key => {
+            const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+            previewContent = previewContent.replace(regex, data[key]);
+          });
+        }
+
+        // 根据机器人类型设置预览内容
+        if (isMarkdownRobotType(form.robot_type)) {
+          // 对于企业微信和钉钉，设置 markdown 内容用于 md-editor-v3
+          previewMarkdownContent.value = previewContent;
+          formPreviewResult.value = ''; // 清空 HTML 预览
+        } else {
+          // 对于其他机器人类型，使用 HTML 渲染
+          const renderedContent = renderContentByRobotType(previewContent, form.robot_type);
+          formPreviewResult.value = `<div class="preview-formatted">
           <div class="preview-title">渲染后内容将发送到：${RobotTypeNames[form.robot_type]}</div>
           <div class="preview-content">${renderedContent}</div>
         </div>`;
-        previewMarkdownContent.value = ''; // 清空 markdown 预览
+          previewMarkdownContent.value = ''; // 清空 markdown 预览
+        }
+      } else {
+        formPreviewResult.value = '<div class="preview-empty">请输入模板内容和选择机器人类型</div>';
+        previewMarkdownContent.value = '';
       }
-    } else {
-      formPreviewResult.value = '<div class="preview-empty">请输入模板内容和选择机器人类型</div>';
-      previewMarkdownContent.value = '';
-    }
-    } catch (error) {
-      console.warn('测试数据格式错误:', error);
+    } catch (_error) {
+      console.warn('测试数据格式错误:', _error);
       formPreviewResult.value = '<div class="preview-error">数据格式错误，请检查JSON格式</div>';
       previewMarkdownContent.value = '';
     }
@@ -713,16 +781,16 @@ const renderPreviewLive = () => {
   if (previewDialogRenderTimeout) {
     clearTimeout(previewDialogRenderTimeout);
   }
-  
+
   previewDialogRenderTimeout = setTimeout(() => {
     try {
       const data = JSON.parse(testData.value);
-      
+
       // 获取模板内容并处理变量替换
       let previewContent = '';
-      const robotType = currentPreviewTemplate.value?.robot_type || RobotType.WECHAT;
+  const robotType = currentPreviewTemplate.value?.robot_type || RobotTypeEnum.WECHAT;
       const templateContent = currentPreviewTemplate.value?.content || '';
-      
+
       try {
         // 使用安全的模板渲染函数
         previewContent = safeRenderTemplate(templateContent, data);
@@ -735,7 +803,7 @@ const renderPreviewLive = () => {
           previewContent = previewContent.replace(regex, data[key]);
         });
       }
-      
+
       // 根据机器人类型设置预览内容
       if (isMarkdownRobotType(robotType)) {
         // 对于企业微信和钉钉，设置 markdown 内容用于 md-editor-v3
@@ -750,8 +818,8 @@ const renderPreviewLive = () => {
         </div>`;
         previewDialogMarkdownContent.value = ''; // 清空 markdown 预览
       }
-    } catch (error) {
-      console.warn('测试数据格式错误:', error);
+    } catch (_error) {
+      console.warn('测试数据格式错误:', _error);
       previewResult.value = '<div class="preview-error">数据格式错误，请检查JSON格式</div>';
       previewDialogMarkdownContent.value = '';
     }
@@ -772,12 +840,12 @@ const handlePreviewTemplate = (template: Template) => {
 const renderPreview = () => {
   try {
     const data = JSON.parse(testData.value);
-    
+
     // 获取模板内容并处理变量替换
     let previewContent = '';
-    const robotType = currentPreviewTemplate.value?.robot_type || RobotType.WECHAT;
+  const robotType = currentPreviewTemplate.value?.robot_type || RobotTypeEnum.WECHAT;
     const templateContent = currentPreviewTemplate.value?.content || '';
-    
+
     try {
       // 使用安全的模板渲染函数
       previewContent = safeRenderTemplate(templateContent, data);
@@ -790,7 +858,7 @@ const renderPreview = () => {
         previewContent = previewContent.replace(regex, data[key]);
       });
     }
-    
+
     // 根据机器人类型设置预览内容
     if (isMarkdownRobotType(robotType)) {
       // 对于企业微信和钉钉，设置 markdown 内容用于 md-editor-v3
@@ -805,7 +873,7 @@ const renderPreview = () => {
       </div>`;
       previewDialogMarkdownContent.value = ''; // 清空 markdown 预览
     }
-  } catch (error) {
+  } catch (_error) {
     ElMessage.error('测试数据格式无效，请确保输入正确的JSON格式');
     previewResult.value = '<div class="preview-error">数据格式错误，请检查JSON格式</div>';
     previewDialogMarkdownContent.value = '';
@@ -814,15 +882,11 @@ const renderPreview = () => {
 
 // 删除模板
 const handleDeleteTemplate = (template: Template) => {
-  ElMessageBox.confirm(
-    `确定要删除模板"${template.name}"吗？删除后不可恢复。`,
-    '删除确认',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
+  ElMessageBox.confirm(`确定要删除模板"${template.name}"吗？删除后不可恢复。`, '删除确认', {
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
     .then(async () => {
       const success = await templateStore.deleteTemplate(template.id);
       if (success) {
@@ -1046,7 +1110,7 @@ onMounted(async () => {
 .preview-title {
   font-weight: bold;
   margin-bottom: 10px;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .preview-content-wrapper {
@@ -1090,7 +1154,8 @@ onMounted(async () => {
   margin-bottom: 0.8em;
 }
 
-.preview-content :deep(ul), .preview-content :deep(ol) {
+.preview-content :deep(ul),
+.preview-content :deep(ol) {
   padding-left: 2em;
   margin-bottom: 0.8em;
 }
@@ -1123,7 +1188,7 @@ onMounted(async () => {
 }
 
 .preview-content :deep(a) {
-  color: #409EFF;
+  color: #409eff;
   text-decoration: none;
 }
 
@@ -1137,7 +1202,8 @@ onMounted(async () => {
   margin-bottom: 1em;
 }
 
-.preview-content :deep(th), .preview-content :deep(td) {
+.preview-content :deep(th),
+.preview-content :deep(td) {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -1174,13 +1240,11 @@ onMounted(async () => {
   color: #909399;
   font-style: italic;
   padding: 20px 0;
-  text-align: center;
 }
 
 .preview-error {
   color: #f56c6c;
   padding: 20px 0;
-  text-align: center;
 }
 
 .editor-container {

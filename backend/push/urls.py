@@ -13,6 +13,7 @@ router.register(r'distribution/channels', views.DistributionChannelViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('captcha/', views.CaptchaAPIView.as_view(), name='captcha'),
     path('push/', views.MessagePushView.as_view(), name='message-push'),
     path('public/push/<int:template_id>/<int:robot_id>/', views.PublicMessagePushView.as_view(), name='public-message-push'),
     path('public/push/<int:template_id>/', views.PublicMessagePushByNameView.as_view(), name='public-message-push-by-name'),

@@ -9,7 +9,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm">
@@ -17,7 +17,12 @@
             <el-input v-model="searchForm.namespace" placeholder="输入命名空间名称搜索" clearable />
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态" style="width: 150px" clearable>
+            <el-select
+              v-model="searchForm.status"
+              placeholder="请选择状态"
+              style="width: 150px"
+              clearable
+            >
               <el-option label="活跃" value="Active" />
               <el-option label="终止中" value="Terminating" />
             </el-select>
@@ -28,15 +33,9 @@
           </el-form-item>
         </el-form>
       </div>
-      
+
       <!-- 表格区域 -->
-      <el-table 
-        v-loading="loading" 
-        :data="namespaceData" 
-        style="width: 100%" 
-        border
-        row-key="name"
-      >
+      <el-table v-loading="loading" :data="namespaceData" style="width: 100%" border row-key="name">
         <el-table-column prop="name" label="命名空间" min-width="200" />
         <el-table-column prop="status" label="状态" width="120">
           <template #default="scope">
@@ -45,16 +44,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="creationTimestamp" label="创建时间" width="180" />
+        <el-table-column prop="creationTimestamp" label="创建时间" width="180">
+          <template #default="scope">
+            {{ formatToLocalTime(scope.row.creationTimestamp) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="age" label="存在时间" width="120" />
         <el-table-column prop="podCount" label="Pod数量" width="120" />
         <el-table-column prop="serviceCount" label="Service数量" width="120" />
         <el-table-column prop="labels" label="标签" min-width="250" show-overflow-tooltip>
           <template #default="scope">
-            <el-tag 
-              v-for="(value, key) in scope.row.labels" 
-              :key="key" 
-              size="small" 
+            <el-tag
+              v-for="(value, key) in scope.row.labels"
+              :key="key"
+              size="small"
               class="label-tag"
             >
               {{ key }}={{ value }}
@@ -72,7 +75,7 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
@@ -86,55 +89,65 @@
         />
       </div>
     </el-card>
-    
+
     <!-- 命名空间详情对话框 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="命名空间详情"
-      width="70%"
-    >
+    <el-dialog v-model="detailDialogVisible" title="命名空间详情" width="70%">
       <div v-if="currentNamespace" class="namespace-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="名称" label-align="right">{{ currentNamespace.name }}</el-descriptions-item>
+          <el-descriptions-item label="名称" label-align="right">{{
+            currentNamespace.name
+          }}</el-descriptions-item>
           <el-descriptions-item label="状态" label-align="right">
             <el-tag :type="currentNamespace.status === 'Active' ? 'success' : 'warning'">
               {{ currentNamespace.status }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="创建时间" label-align="right">{{ currentNamespace.creationTimestamp }}</el-descriptions-item>
-          <el-descriptions-item label="存在时间" label-align="right">{{ currentNamespace.age }}</el-descriptions-item>
-          <el-descriptions-item label="Pod数量" label-align="right">{{ currentNamespace.podCount }}</el-descriptions-item>
-          <el-descriptions-item label="Service数量" label-align="right">{{ currentNamespace.serviceCount }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间" label-align="right">
+            {{ formatToLocalTime(currentNamespace.creationTimestamp) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="存在时间" label-align="right">{{
+            currentNamespace.age
+          }}</el-descriptions-item>
+          <el-descriptions-item label="Pod数量" label-align="right">{{
+            currentNamespace.podCount
+          }}</el-descriptions-item>
+          <el-descriptions-item label="Service数量" label-align="right">{{
+            currentNamespace.serviceCount
+          }}</el-descriptions-item>
         </el-descriptions>
-        
-        <div v-if="currentNamespace.labels && Object.keys(currentNamespace.labels).length > 0" class="namespace-labels">
+
+        <div
+          v-if="currentNamespace.labels && Object.keys(currentNamespace.labels).length > 0"
+          class="namespace-labels"
+        >
           <h4>标签</h4>
-          <el-tag 
-            v-for="(value, key) in currentNamespace.labels" 
-            :key="key" 
-            class="label-tag"
-          >
+          <el-tag v-for="(value, key) in currentNamespace.labels" :key="key" class="label-tag">
             {{ key }}: {{ value }}
           </el-tag>
         </div>
-        
-        <div v-if="currentNamespace.annotations && Object.keys(currentNamespace.annotations).length > 0" class="namespace-annotations">
+
+        <div
+          v-if="
+            currentNamespace.annotations && Object.keys(currentNamespace.annotations).length > 0
+          "
+          class="namespace-annotations"
+        >
           <h4>注解</h4>
           <div class="annotation-list">
-            <div v-for="(value, key) in currentNamespace.annotations" :key="key" class="annotation-item">
+            <div
+              v-for="(value, key) in currentNamespace.annotations"
+              :key="key"
+              class="annotation-item"
+            >
               <strong>{{ key }}:</strong> {{ value }}
             </div>
           </div>
         </div>
       </div>
     </el-dialog>
-    
+
     <!-- 资源列表对话框 -->
-    <el-dialog
-      v-model="resourceDialogVisible"
-      title="命名空间资源"
-      width="80%"
-    >
+    <el-dialog v-model="resourceDialogVisible" title="命名空间资源" width="80%">
       <div v-if="currentNamespace">
         <el-tabs v-model="activeResourceTab">
           <el-tab-pane label="Pods" name="pods">
@@ -171,6 +184,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
+import { formatToLocalTime } from '../../utils/timeFormatter';
 
 // 命名空间数据接口
 interface Namespace {
@@ -216,14 +230,14 @@ const activeResourceTab = ref('pods');
 // 搜索表单
 const searchForm = reactive({
   namespace: '',
-  status: ''
+  status: '',
 });
 
 // 分页
 const pagination = reactive({
   currentPage: 1,
   pageSize: 20,
-  total: 0
+  total: 0,
 });
 
 // 模拟命名空间数据
@@ -236,11 +250,11 @@ const namespaceData = ref<Namespace[]>([
     podCount: 12,
     serviceCount: 3,
     labels: {
-      'kubernetes.io/metadata.name': 'default'
+      'kubernetes.io/metadata.name': 'default',
     },
     annotations: {
-      'kubernetes.io/managed-by': 'system'
-    }
+      'kubernetes.io/managed-by': 'system',
+    },
   },
   {
     name: 'kube-system',
@@ -251,8 +265,8 @@ const namespaceData = ref<Namespace[]>([
     serviceCount: 2,
     labels: {
       'kubernetes.io/metadata.name': 'kube-system',
-      'pod-security.kubernetes.io/enforce': 'privileged'
-    }
+      'pod-security.kubernetes.io/enforce': 'privileged',
+    },
   },
   {
     name: 'monitoring',
@@ -263,8 +277,8 @@ const namespaceData = ref<Namespace[]>([
     serviceCount: 4,
     labels: {
       'kubernetes.io/metadata.name': 'monitoring',
-      'purpose': 'monitoring'
-    }
+      purpose: 'monitoring',
+    },
   },
   {
     name: 'test-env',
@@ -275,9 +289,9 @@ const namespaceData = ref<Namespace[]>([
     serviceCount: 0,
     labels: {
       'kubernetes.io/metadata.name': 'test-env',
-      'environment': 'test'
-    }
-  }
+      environment: 'test',
+    },
+  },
 ]);
 
 // 模拟资源数据
@@ -287,14 +301,14 @@ const resourceData = ref<ResourceData>({
       name: 'nginx-deployment-7d6dd8c95f-abc123',
       status: 'Running',
       restarts: 0,
-      age: '2d'
+      age: '2d',
     },
     {
       name: 'redis-server-6c7b9f8d4e-def456',
       status: 'Running',
       restarts: 1,
-      age: '5d'
-    }
+      age: '5d',
+    },
   ],
   services: [
     {
@@ -302,28 +316,28 @@ const resourceData = ref<ResourceData>({
       type: 'ClusterIP',
       clusterIP: '10.96.123.45',
       externalIP: '<none>',
-      ports: '80/TCP'
+      ports: '80/TCP',
     },
     {
       name: 'redis-service',
       type: 'ClusterIP',
       clusterIP: '10.96.234.56',
       externalIP: '<none>',
-      ports: '6379/TCP'
-    }
+      ports: '6379/TCP',
+    },
   ],
   configmaps: [
     {
       name: 'app-config',
       dataCount: 3,
-      age: '10d'
+      age: '10d',
     },
     {
       name: 'nginx-config',
       dataCount: 1,
-      age: '2d'
-    }
-  ]
+      age: '2d',
+    },
+  ],
 });
 
 // 刷新数据

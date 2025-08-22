@@ -13,7 +13,7 @@
           </div>
         </div>
       </template>
-      
+
       <div v-loading="loading">
         <!-- 按机器人分组展示 -->
         <div v-if="robotGroups.length > 0">
@@ -24,12 +24,12 @@
                 {{ group.robots.length }} 个机器人
               </el-tag>
             </div>
-            
+
             <div v-for="robot in group.robots" :key="robot.id" class="robot-section">
               <div class="robot-header">
                 <h5>{{ robot.name }}</h5>
               </div>
-              
+
               <el-table
                 :data="getTemplatesForRobot(robot, group.templates)"
                 stripe
@@ -44,7 +44,7 @@
                     <el-tabs type="border-card" class="api-tabs">
                       <el-tab-pane label="ID模式">
                         <div class="api-url-container">
-                          <div 
+                          <div
                             class="api-url-text api-url-clickable"
                             @click="copyApiUrl(scope.row.template_id, scope.row.robot_id)"
                             title="点击复制接口地址"
@@ -55,9 +55,11 @@
                       </el-tab-pane>
                       <el-tab-pane label="名称模式" v-if="scope.row.robot_english_name">
                         <div class="api-url-container">
-                          <div 
+                          <div
                             class="api-url-text api-url-clickable"
-                            @click="copyApiUrlByName(scope.row.template_id, scope.row.robot_english_name)"
+                            @click="
+                              copyApiUrlByName(scope.row.template_id, scope.row.robot_english_name)
+                            "
                             title="点击复制接口地址"
                           >
                             {{ getApiUrl(scope.row.template_id, 0, scope.row.robot_english_name) }}
@@ -69,21 +71,17 @@
                 </el-table-column>
                 <el-table-column label="操作" width="180">
                   <template #default="scope">
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click="showApiDocs(scope.row.template_id)" 
+                    <el-button
+                      type="primary"
+                      size="small"
+                      @click="showApiDocs(scope.row.template_id)"
                       plain
                     >
                       <el-icon><InfoFilled /></el-icon>
                       接口说明
                     </el-button>
                     <el-dropdown trigger="click" @command="handleTestCommand">
-                      <el-button 
-                        type="success" 
-                        size="small" 
-                        plain
-                      >
+                      <el-button type="success" size="small" plain>
                         <el-icon><Connection /></el-icon>
                         测试
                         <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -91,7 +89,9 @@
                       <template #dropdown>
                         <el-dropdown-menu>
                           <el-dropdown-item command="id">ID模式测试</el-dropdown-item>
-                          <el-dropdown-item command="name" v-if="scope.row.robot_english_name">名称模式测试</el-dropdown-item>
+                          <el-dropdown-item command="name" v-if="scope.row.robot_english_name"
+                            >名称模式测试</el-dropdown-item
+                          >
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -109,17 +109,15 @@
               <el-icon><Operation /></el-icon>
               高级分发接口
             </h4>
-            <el-tag type="warning" size="small">
-              智能分发
-            </el-tag>
+            <el-tag type="warning" size="small"> 智能分发 </el-tag>
           </div>
-          
+
           <div class="distribution-section">
             <div class="distribution-header">
               <h5>分发推送接口</h5>
               <p class="description">根据告警数据自动分发到对应的机器人绑定</p>
             </div>
-            
+
             <el-table
               :data="getDistributionTemplates()"
               stripe
@@ -132,7 +130,7 @@
               <el-table-column label="分发接口地址 (点击复制)" min-width="400">
                 <template #default>
                   <div class="api-url-container">
-                    <div 
+                    <div
                       class="api-url-text api-url-clickable distribution-url"
                       @click="copyDistributionUrl()"
                       title="点击复制分发接口地址"
@@ -144,18 +142,18 @@
               </el-table-column>
               <el-table-column label="操作" width="180">
                 <template #default="scope">
-                  <el-button 
-                    type="warning" 
-                    size="small" 
-                    @click="showDistributionDocs(scope.row.template_id)" 
+                  <el-button
+                    type="warning"
+                    size="small"
+                    @click="showDistributionDocs(scope.row.template_id)"
                     plain
                   >
                     <el-icon><InfoFilled /></el-icon>
                     分发说明
                   </el-button>
-                  <el-button 
-                    type="success" 
-                    size="small" 
+                  <el-button
+                    type="success"
+                    size="small"
                     @click="testDistributionApi(scope.row.template_id)"
                     plain
                   >
@@ -167,59 +165,66 @@
             </el-table>
           </div>
         </div>
-        
+
         <!-- 空状态展示 -->
         <el-empty v-else description="暂无数据，请先创建机器人和模板" />
       </div>
     </el-card>
-    
+
     <!-- 接口文档对话框 -->
-    <el-dialog
-      v-model="docsDialogVisible"
-      title="接口文档"
-      width="60%"
-    >
+    <el-dialog v-model="docsDialogVisible" title="接口文档" width="60%">
       <div class="api-docs-container" v-if="currentTemplateInfo">
         <div class="docs-section">
           <h4>基本信息</h4>
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="模板名称">{{ currentTemplateInfo.name }}</el-descriptions-item>
-            <el-descriptions-item label="适用机器人">{{ currentTemplateInfo.robot_type_name }}</el-descriptions-item>
+            <el-descriptions-item label="模板名称">{{
+              currentTemplateInfo.name
+            }}</el-descriptions-item>
+            <el-descriptions-item label="适用机器人">{{
+              currentTemplateInfo.robot_type_name
+            }}</el-descriptions-item>
           </el-descriptions>
         </div>
-        
+
         <div class="docs-section">
           <h4>接口地址 (点击复制)</h4>
           <el-tabs type="border-card">
             <el-tab-pane label="ID模式">
               <div class="api-url-box">
-                <div class="api-url-clickable" @click="copyCurrentApiUrl" title="点击复制接口地址">POST {{ currentApiUrl }}</div>
+                <div class="api-url-clickable" @click="copyCurrentApiUrl" title="点击复制接口地址">
+                  POST {{ currentApiUrl }}
+                </div>
               </div>
             </el-tab-pane>
             <el-tab-pane label="名称模式">
               <div class="api-url-box">
-                <div class="api-url-clickable" @click="copyCurrentApiUrlByName" title="点击复制接口地址">
+                <div
+                  class="api-url-clickable"
+                  @click="copyCurrentApiUrlByName"
+                  title="点击复制接口地址"
+                >
                   POST {{ currentApiUrlByName }}
                 </div>
               </div>
               <div class="api-note">
                 <p>
-                  <el-icon><InfoFilled /></el-icon> 
-                  <strong>说明：</strong>名称模式使用机器人的英文名称作为参数，适用于不方便记忆机器人ID的场景。
+                  <el-icon><InfoFilled /></el-icon>
+                  <strong>说明：</strong
+                  >名称模式使用机器人的英文名称作为参数，适用于不方便记忆机器人ID的场景。
                 </p>
               </div>
             </el-tab-pane>
           </el-tabs>
         </div>
-        
+
         <div class="docs-section">
           <h4>请求参数</h4>
           <div class="params-list">
             <p>请求体格式: JSON</p>
             <div class="variables-container" v-if="currentTemplateInfo.variables.length > 0">
               <p>必须包含以下变量:</p>
-              <el-tag 
-                v-for="variable in currentTemplateInfo.variables" 
+              <el-tag
+                v-for="variable in currentTemplateInfo.variables"
                 :key="variable"
                 class="variable-tag"
               >
@@ -228,18 +233,24 @@
             </div>
           </div>
         </div>
-        
+
         <div class="docs-section">
           <h4>请求示例 (点击复制)</h4>
           <div class="example-box">
-            <pre class="example-code api-url-clickable" @click="copyExampleJson" title="点击复制示例JSON">{{ JSON.stringify(currentTemplateInfo.example_json, null, 2) }}</pre>
+            <pre
+              class="example-code api-url-clickable"
+              @click="copyExampleJson"
+              title="点击复制示例JSON"
+              >{{ JSON.stringify(currentTemplateInfo.example_json, null, 2) }}</pre
+            >
           </div>
         </div>
-        
+
         <div class="docs-section">
           <h4>响应示例</h4>
           <div class="example-box">
-            <pre class="example-code">// 成功响应
+            <pre class="example-code">
+// 成功响应
 {
   "message": "消息推送成功"
 }
@@ -247,18 +258,15 @@
 // 失败响应
 {
   "error": "错误信息"
-}</pre>
+}</pre
+            >
           </div>
         </div>
       </div>
     </el-dialog>
-    
+
     <!-- 测试接口对话框 -->
-    <el-dialog
-      v-model="testDialogVisible"
-      title="测试接口"
-      width="60%"
-    >
+    <el-dialog v-model="testDialogVisible" title="测试接口" width="60%">
       <div class="test-api-container" v-if="currentTemplateInfo">
         <div class="test-section">
           <h4>接口信息</h4>
@@ -283,7 +291,7 @@
             </el-descriptions-item>
           </el-descriptions>
         </div>
-        
+
         <div class="test-section">
           <h4>请求参数</h4>
           <el-input
@@ -293,11 +301,13 @@
             placeholder="请输入JSON格式的请求参数"
           />
         </div>
-        
+
         <div class="test-section">
           <h4>测试结果</h4>
           <div class="test-result" v-loading="testLoading">
-            <pre v-if="testResult" class="result-code">{{ JSON.stringify(testResult, null, 2) }}</pre>
+            <pre v-if="testResult" class="result-code">{{
+              JSON.stringify(testResult, null, 2)
+            }}</pre>
             <el-empty v-else description="暂无测试结果" />
           </div>
         </div>
@@ -318,18 +328,12 @@
 import { ref, onMounted } from 'vue';
 import { useTemplateStore } from '../../stores/template';
 import { useRobotStore } from '../../stores/robot';
-import { RobotType, RobotTypeNames } from '../../types';
+import { RobotType, RobotTypeEnum, RobotTypeNames } from '../../types';
 import type { Template, Robot } from '../../types';
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
 import useClipboard from 'vue-clipboard3';
-import { 
-  Refresh, 
-  InfoFilled, 
-  Connection,
-  ArrowDown,
-  Operation
-} from '@element-plus/icons-vue';
+import { Refresh, InfoFilled, Connection, ArrowDown, Operation } from '@element-plus/icons-vue';
 
 // 存储
 const templateStore = useTemplateStore();
@@ -364,25 +368,34 @@ const robotGroups = ref<RobotGroup[]>([]);
 const docsDialogVisible = ref(false);
 const currentTemplateId = ref<number | null>(null);
 const currentRobotId = ref<number | null>(null);
-const currentTemplateInfo = ref<any>(null);
+
+// 模板信息（来自 /api/templates/{id}/info/）
+interface TemplateInfo {
+  name: string;
+  robot_type_name: string;
+  variables: string[];
+  example_json: unknown;
+}
+
+const currentTemplateInfo = ref<TemplateInfo | null>(null);
 const currentApiUrl = ref('');
 const currentApiUrlByName = ref('');
 
 // 测试接口对话框
 const testDialogVisible = ref(false);
 const testRequestData = ref('');
-const testResult = ref<any>(null);
+const testResult = ref<unknown | null>(null);
 const testLoading = ref(false);
 const currentTestMode = ref<'id' | 'name' | 'distribution'>('id'); // 'id'、'name' 或 'distribution'
 
 // 获取机器人类型标签样式
 const getRobotTypeTagType = (type: RobotType) => {
   switch (type) {
-    case RobotType.WECHAT:
+  case RobotTypeEnum.WECHAT:
       return 'success';
-    case RobotType.FEISHU:
+  case RobotTypeEnum.FEISHU:
       return 'primary';
-    case RobotType.DINGTALK:
+  case RobotTypeEnum.DINGTALK:
       return 'warning';
     default:
       return 'info';
@@ -402,19 +415,19 @@ const getTemplatesForRobot = (robot: Robot, templates: Template[]) => {
     template_name: template.name,
     robot_id: robot.id,
     robot_name: robot.name,
-    robot_english_name: robot.english_name || ''
+    robot_english_name: robot.english_name || '',
   }));
 };
 
 // 获取API地址
 const getApiUrl = (templateId: number, robotId: number, robotEnglishName?: string) => {
   const baseUrl = window.location.origin;
-  
+
   // 如果提供了英文名称，则使用英文名称形式的URL
   if (robotEnglishName) {
     return `${baseUrl}/api/public/push/${templateId}/?robot_english_name=${robotEnglishName}`;
   }
-  
+
   // 否则使用ID形式的URL
   return `${baseUrl}/api/public/push/${templateId}/${robotId}/`;
 };
@@ -425,8 +438,8 @@ const copyApiUrl = async (templateId: number, robotId: number) => {
     const url = getApiUrl(templateId, robotId);
     await toClipboard(url);
     ElMessage.success('接口地址已复制到剪贴板');
-  } catch (e) {
-    console.error('复制失败', e);
+  } catch (_e) {
+    console.error('复制失败', _e);
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -437,8 +450,8 @@ const copyApiUrlByName = async (templateId: number, robotEnglishName: string) =>
     const url = getApiUrl(templateId, 0, robotEnglishName);
     await toClipboard(url);
     ElMessage.success('接口地址已复制到剪贴板');
-  } catch (e) {
-    console.error('复制失败', e);
+  } catch (_e) {
+    console.error('复制失败', _e);
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -449,9 +462,9 @@ const fetchTemplateInfo = async (templateId: number) => {
     const baseUrl = window.location.origin;
     const response = await axios.get(`${baseUrl}/api/templates/${templateId}/info/`);
     return response.data;
-  } catch (error) {
+  } catch (_error) {
     ElMessage.error('获取模板信息失败');
-    console.error('获取模板信息失败:', error);
+    console.error('获取模板信息失败:', _error);
     return null;
   }
 };
@@ -459,11 +472,11 @@ const fetchTemplateInfo = async (templateId: number) => {
 // 显示API文档
 const showApiDocs = async (templateId: number) => {
   currentTemplateId.value = templateId;
-  
+
   // 设置两种API URL格式
   currentApiUrl.value = getApiUrl(templateId, 0).replace('/0/', '/[robot_id]/');
   currentApiUrlByName.value = getApiUrl(templateId, 0, '[robot_english_name]');
-  
+
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);
   if (info) {
@@ -477,8 +490,8 @@ const copyCurrentApiUrl = async () => {
   try {
     await toClipboard(currentApiUrl.value);
     ElMessage.success('接口地址已复制到剪贴板');
-  } catch (e) {
-    console.error('复制失败', e);
+  } catch (_e) {
+    console.error('复制失败', _e);
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -488,8 +501,8 @@ const copyCurrentApiUrlByName = async () => {
   try {
     await toClipboard(currentApiUrlByName.value);
     ElMessage.success('接口地址已复制到剪贴板');
-  } catch (e) {
-    console.error('复制失败', e);
+  } catch (_e) {
+    console.error('复制失败', _e);
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -501,8 +514,8 @@ const copyExampleJson = async () => {
       const jsonStr = JSON.stringify(currentTemplateInfo.value.example_json, null, 2);
       await toClipboard(jsonStr);
       ElMessage.success('示例JSON已复制到剪贴板');
-    } catch (e) {
-      console.error('复制失败', e);
+    } catch (_e) {
+      console.error('复制失败', _e);
       ElMessage.error('复制失败，请手动复制');
     }
   }
@@ -515,7 +528,7 @@ const getDistributionTemplates = () => {
   return templates.value.map(template => ({
     template_id: template.id,
     template_name: template.name,
-    robot_type_name: getRobotTypeName(template.robot_type)
+    robot_type_name: getRobotTypeName(template.robot_type),
   }));
 };
 
@@ -531,8 +544,8 @@ const copyDistributionUrl = async () => {
     const url = getDistributionUrl();
     await toClipboard(url);
     ElMessage.success('分发接口地址已复制到剪贴板');
-  } catch (e) {
-    console.error('复制失败', e);
+  } catch (_e) {
+    console.error('复制失败', _e);
     ElMessage.error('复制失败，请手动复制');
   }
 };
@@ -540,10 +553,10 @@ const copyDistributionUrl = async () => {
 // 显示分发接口文档
 const showDistributionDocs = async (templateId: number) => {
   currentTemplateId.value = templateId;
-  
+
   // 设置分发API URL
   currentApiUrl.value = getDistributionUrl();
-  
+
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);
   if (info) {
@@ -554,41 +567,41 @@ const showDistributionDocs = async (templateId: number) => {
       robot_type_name: '智能分发',
       variables: ['alerts', 'instance_name', 'rule_name', ...info.variables],
       example_json: {
-        receiver: "web\\.hook\\.prometheusalert",
-        status: "firing",
+        receiver: 'web\\.hook\\.prometheusalert',
+        status: 'firing',
         alerts: [
           {
-            status: "firing",
+            status: 'firing',
             labels: {
-              alertname: "HighCPUUsage",
-              instance: "server-001",
-              job: "node-exporter",
-              severity: "warning"
+              alertname: 'HighCPUUsage',
+              instance: 'server-001',
+              job: 'node-exporter',
+              severity: 'warning',
             },
             annotations: {
-              description: "CPU使用率超过80%",
-              summary: "服务器CPU使用率过高"
+              description: 'CPU使用率超过80%',
+              summary: '服务器CPU使用率过高',
             },
-            startsAt: "2024-01-01T00:00:00.000Z",
-            endsAt: "0001-01-01T00:00:00Z",
-            generatorURL: "http://prometheus:9090/graph?g0.expr=...",
-            fingerprint: "abc123def456"
-          }
+            startsAt: '2024-01-01T00:00:00.000Z',
+            endsAt: '0001-01-01T00:00:00Z',
+            generatorURL: 'http://prometheus:9090/graph?g0.expr=...',
+            fingerprint: 'abc123def456',
+          },
         ],
         groupLabels: {
-          instance: "server-001"
+          instance: 'server-001',
         },
         commonLabels: {
-          instance: "server-001",
-          job: "node-exporter",
-          severity: "warning"
+          instance: 'server-001',
+          job: 'node-exporter',
+          severity: 'warning',
         },
         commonAnnotations: {
-          summary: "服务器CPU使用率过高"
+          summary: '服务器CPU使用率过高',
         },
-        externalURL: "http://alertmanager:9093",
-        version: "4"
-      }
+        externalURL: 'http://alertmanager:9093',
+        version: '4',
+      },
     };
     docsDialogVisible.value = true;
   }
@@ -598,48 +611,60 @@ const showDistributionDocs = async (templateId: number) => {
 const testDistributionApi = async (templateId: number) => {
   currentTemplateId.value = templateId;
   currentTestMode.value = 'distribution';
-  
+
   // 设置分发API URL
   currentApiUrl.value = getDistributionUrl();
-  
+
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);
   if (info) {
     currentTemplateInfo.value = {
       ...info,
-      name: `${info.name} (分发测试)`
+      name: `${info.name} (分发测试)`,
     };
-    
+
     // 设置分发测试数据
-    testRequestData.value = JSON.stringify({
-      receiver: "web\\.hook\\.prometheusalert",
-      status: "firing",
-      alerts: [
-        {
-          status: "firing",
-          labels: {
-            alertname: "HighCPUUsage",
-            instance: "server-001",
-            job: "node-exporter",
-            severity: "warning"
+    testRequestData.value = JSON.stringify(
+      {
+        receiver: 'web\\.hook\\.prometheusalert',
+        status: 'firing',
+        alerts: [
+          {
+            status: 'firing',
+            labels: {
+              alertname: 'HighCPUUsage',
+              instance: 'server-001',
+              job: 'node-exporter',
+              severity: 'warning',
+            },
+            annotations: {
+              description: 'CPU使用率超过80%',
+              summary: '服务器CPU使用率过高',
+            },
+            startsAt: '2024-01-01T00:00:00.000Z',
+            endsAt: '0001-01-01T00:00:00Z',
           },
-          annotations: {
-            description: "CPU使用率超过80%",
-            summary: "服务器CPU使用率过高"
-          },
-          startsAt: "2024-01-01T00:00:00.000Z",
-          endsAt: "0001-01-01T00:00:00Z"
-        }
-      ]
-    }, null, 2);
-    
+        ],
+      },
+      null,
+      2
+    );
+
     testResult.value = null;
     testDialogVisible.value = true;
   }
 };
 
 // 处理测试命令
-const handleTestCommand = (command: string, row: any) => {
+interface RobotTemplateRow {
+  template_id: number;
+  template_name: string;
+  robot_id: number;
+  robot_name: string;
+  robot_english_name?: string;
+}
+
+const handleTestCommand = (command: string, row: RobotTemplateRow) => {
   if (command === 'id') {
     testApi(row.template_id, row.robot_id, undefined, 'id');
   } else if (command === 'name' && row.robot_english_name) {
@@ -648,18 +673,23 @@ const handleTestCommand = (command: string, row: any) => {
 };
 
 // 测试API
-const testApi = async (templateId: number, robotId: number, robotEnglishName?: string, mode: 'id' | 'name' = 'id') => {
+const testApi = async (
+  templateId: number,
+  robotId: number,
+  robotEnglishName?: string,
+  mode: 'id' | 'name' = 'id'
+) => {
   currentTemplateId.value = templateId;
   currentRobotId.value = robotId;
   currentTestMode.value = mode;
-  
+
   // 根据模式设置API URL
   if (mode === 'name' && robotEnglishName) {
     currentApiUrl.value = getApiUrl(templateId, 0, robotEnglishName);
   } else {
     currentApiUrl.value = getApiUrl(templateId, robotId);
   }
-  
+
   // 获取模板信息
   const info = await fetchTemplateInfo(templateId);
   if (info) {
@@ -676,32 +706,34 @@ const runApiTest = async () => {
     ElMessage.error('模板或机器人ID无效');
     return;
   }
-  
+
   testLoading.value = true;
-  
+
   try {
     // 解析JSON数据
     const requestData = JSON.parse(testRequestData.value);
-    
+
     // 发送请求
-    const response = await axios.post(
-      currentApiUrl.value,
-      requestData
-    );
-    
+    const response = await axios.post(currentApiUrl.value, requestData);
+
     testResult.value = response.data;
     ElMessage.success('测试请求已发送');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API测试失败:', error);
-    if (error.response) {
-      // 服务器返回的错误
-      testResult.value = error.response.data;
-    } else if (error.request) {
-      // 请求未收到响应
-      testResult.value = { error: '未收到服务器响应' };
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        testResult.value = error.response.data as unknown;
+      } else if (error.request) {
+        testResult.value = { error: '未收到服务器响应' };
+      } else {
+        testResult.value = { error: error.message || '请求失败' };
+      }
     } else {
-      // JSON解析错误或其他错误
-      testResult.value = { error: error.message || '请求失败' };
+      const msg =
+        typeof error === 'object' && error && 'message' in error
+          ? String((error as { message?: string }).message)
+          : '请求失败';
+      testResult.value = { error: msg };
     }
     ElMessage.error('测试失败');
   } finally {
@@ -712,20 +744,17 @@ const runApiTest = async () => {
 // 获取数据
 const fetchData = async () => {
   loading.value = true;
-  
+
   try {
     // 获取模板和机器人数据
-    await Promise.all([
-      templateStore.fetchTemplates(),
-      robotStore.fetchRobots()
-    ]);
-    
+    await Promise.all([templateStore.fetchTemplates(), robotStore.fetchRobots()]);
+
     templates.value = templateStore.templates;
     robots.value = robotStore.robots;
-    
+
     // 按机器人类型分组
     const groups: Record<string, RobotGroup> = {};
-    
+
     // 创建机器人类型分组
     robots.value.forEach(robot => {
       const typeStr = robot.robot_type.toString();
@@ -733,12 +762,12 @@ const fetchData = async () => {
         groups[typeStr] = {
           robot_type: robot.robot_type,
           robots: [],
-          templates: []
+          templates: [],
         };
       }
       groups[typeStr].robots.push(robot);
     });
-    
+
     // 将模板放入对应分组
     templates.value.forEach(template => {
       const typeStr = template.robot_type.toString();
@@ -746,14 +775,13 @@ const fetchData = async () => {
         groups[typeStr].templates.push(template);
       }
     });
-    
+
     // 转换为数组
     robotGroups.value = Object.values(groups);
-    
+
     console.log('数据加载完成，分组:', robotGroups.value);
-    
-  } catch (error) {
-    console.error('获取数据失败:', error);
+  } catch (_error) {
+    console.error('获取数据失败:', _error);
     ElMessage.error('加载数据失败');
   } finally {
     loading.value = false;
@@ -849,7 +877,7 @@ onMounted(() => {
 .robot-header {
   margin-bottom: 10px;
   padding-left: 10px;
-  border-left: 3px solid #409EFF;
+  border-left: 3px solid #409eff;
 }
 
 .robot-header h5 {
@@ -886,8 +914,8 @@ onMounted(() => {
 .api-url-clickable:hover {
   background-color: #e6f1fc;
   text-decoration: underline;
-  border-color: #409EFF;
-  color: #409EFF;
+  border-color: #409eff;
+  color: #409eff;
 }
 
 .example-code.api-url-clickable {
@@ -898,7 +926,7 @@ onMounted(() => {
 
 .example-code.api-url-clickable:hover {
   background-color: #e6f1fc;
-  border-color: #409EFF;
+  border-color: #409eff;
 }
 
 .api-url-box {
@@ -925,8 +953,8 @@ onMounted(() => {
 .api-url-box .api-url-clickable:hover {
   background-color: #e6f1fc;
   text-decoration: underline;
-  border-color: #409EFF;
-  color: #409EFF;
+  border-color: #409eff;
+  color: #409eff;
 }
 
 .variables-container {
@@ -941,7 +969,8 @@ onMounted(() => {
   position: relative;
 }
 
-.example-code, .result-code {
+.example-code,
+.result-code {
   background-color: #f5f7fa;
   padding: 15px;
   border-radius: 4px;
@@ -967,11 +996,13 @@ onMounted(() => {
   padding: 15px;
 }
 
-.docs-section, .test-section {
+.docs-section,
+.test-section {
   margin-bottom: 20px;
 }
 
-.docs-section h4, .test-section h4 {
+.docs-section h4,
+.test-section h4 {
   margin-top: 0;
   margin-bottom: 10px;
   color: #606266;
